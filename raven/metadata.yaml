@@ -1,0 +1,142 @@
+type: replace_metadata
+args:
+  query_templates: []
+  tables:
+
+  - table: albums
+    select_permissions: []
+    object_relationships:
+    - name: artist
+      using:
+        foreign_key_constraint_on: artist_id
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    - name: tracks
+      using:
+        foreign_key_constraint_on:
+          table: tracks
+          column: album_id
+
+  - table: artists
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    - name: albums
+      using:
+        foreign_key_constraint_on:
+          table: albums
+          column: artist_id
+
+  - table: tracks
+    select_permissions: []
+    object_relationships:
+    - name: album
+      using:
+        foreign_key_constraint_on: album_id
+    - name: media_type
+      using:
+        foreign_key_constraint_on: media_type_id
+    - name: genre
+      using:
+        foreign_key_constraint_on: genre_id
+
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    - name: playlists
+      using:
+        foreign_key_constraint_on:
+          table: playlist_track
+          column: track_id
+
+  - table: genres
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    - name: tracks
+      using:
+        foreign_key_constraint_on:
+          table: tracks
+          column: genre_id
+
+  - table: playlists
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    - name: tracks
+      using:
+        foreign_key_constraint_on:
+          table: playlist_track
+          column: playlist_id
+
+  - table: playlist_track
+    select_permissions: []
+    object_relationships:
+    - name: playlist
+      using:
+        foreign_key_constraint_on: playlist_id
+    - name: track
+      using:
+        foreign_key_constraint_on: track_id
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships: []
+
+  - table: media_types
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships:
+    array_relationships:
+    - name: tracks
+      using:
+        foreign_key_constraint_on:
+          table: tracks
+          column: media_type_id
+
+  - table: customers
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships: []
+
+  - table: employees
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships: []
+
+  - table: invoices
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships: []
+
+  - table: invoice_lines
+    select_permissions: []
+    object_relationships: []
+    insert_permissions: []
+    update_permissions: []
+    delete_permissions: []
+    array_relationships: []

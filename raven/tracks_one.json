@@ -1,0 +1,19 @@
+{
+  "args": {
+    "where": {
+      "id": 10
+    },
+    "columns": [
+      "id",
+      "name",
+      {
+        "name": "media_type",
+        "columns": [
+          "name"
+        ]
+      }
+    ],
+    "table": "tracks"
+  },
+  "type": "select"
+}
