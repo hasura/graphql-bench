@@ -4,14 +4,10 @@ set -e
 
 DEFAULT_RAVEN_URL="http://127.0.0.1:7080"
 
-WRK_THREADS=${WRK_THREADS:-8}
-WRK_CONNECTIONS=${WRK_CONNECTIONS:-24}
-WRK_DURATION=${WRK_DURATION:-60s}
-
 RAVEN_URL=${RAVEN_URL:-$DEFAULT_RAVEN_URL}
 
 usage() {
-    echo "Usage: $0 (init|start|nuke|bench)"
+    echo "Usage: $0 (init|start|nuke)"
 }
 
 init () {
@@ -73,26 +69,6 @@ nuke () {
     docker volume rm postgres-chinook
 }
 
-bench_query ()
-{
-    echo "running benchmark: $1"
-    set +e
-    # here the custom json output is written to the stderr
-    # this is because wrk doesn't allow you to suppress the default output
-    wrk -c $WRK_CONNECTIONS -d $WRK_DURATION -t $WRK_THREADS -s bench.lua --timeout 300s "$RAVEN_URL" $1 2> stats/$1.json
-    # this is needed because wrk's error is written to stderr
-    rc=$?; if [ $rc -ne 0 ]; then cat stats/$1.json; set -e; exit $rc; fi
-}
-
-bench () {
-    echo 'starting benchmarks'
-    mkdir -p stats
-    bench_query albums_tracks_genre_some
-    bench_query albums_tracks_genre_all
-    bench_query tracks_media_some
-    bench_query tracks_media_all
-}
-
 if [ "$#" -ne 1 ]; then
     usage
     exit 1
@@ -113,10 +89,6 @@ case $1 in
         ;;
     nuke)
         nuke
-        exit
-        ;;
-    bench)
-        bench
         exit
         ;;
     *)
