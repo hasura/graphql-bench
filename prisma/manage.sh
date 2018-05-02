@@ -10,7 +10,10 @@ init() {
     mkdir -p /tmp/prisma
     npm install prisma --prefix=/tmp/prisma
     PRISMA=/tmp/prisma/node_modules/prisma/dist/index.js
-    "$PRISMA" local nuke
+    docker-compose up -d
+    # Needs a better way
+    echo "waiting for the containers to be up and running"
+    sleep 30
     "$PRISMA" deploy
     "$PRISMA" import --data chinook.zip
 }
@@ -26,18 +29,16 @@ case $1 in
         exit
         ;;
     start)
-        docker start prisma-db
-        docker start local_prisma-database_1
+        docker-compose up -d
         exit
         ;;
     stop)
-        docker stop local_prisma-database_1
-        docker stop prisma-db
+        docker-compose stop
         exit
         ;;
     nuke)
-        docker stop prisma-db && docker rm prisma-db
-        docker stop local_prisma-database_1 && docker rm local_prisma-database_1
+        docker-compose stop
+        docker-compose rm -f
         exit
         ;;
     *)

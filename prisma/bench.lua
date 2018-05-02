@@ -7,7 +7,7 @@ end
 
 function request()
   wrk.method = "POST"
-  wrk.path   = "/Chinook/dev"
+  wrk.path   = "/"
 
   wrk.headers["Content-Type"] = "application/json"
 

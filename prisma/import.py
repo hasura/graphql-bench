@@ -1,7 +1,7 @@
 import requests
 
 ravenUrl = "http://127.0.0.1:8080/v1/query"
-prismaUrl = "http://127.0.0.1:4466/Chinook/dev"
+prismaUrl = "http://127.0.0.1:4466"
 
 def fetchData(tableName):
     resp = requests.post(
