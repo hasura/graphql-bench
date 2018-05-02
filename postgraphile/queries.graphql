@@ -57,3 +57,12 @@ query tracks_media_some {
     }
   }
 }
+
+query artistByArtistId {
+  allArtists(condition: {id: 3}) {
+    nodes {
+      id
+      name
+    }
+  }
+}

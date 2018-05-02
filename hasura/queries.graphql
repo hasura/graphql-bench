@@ -63,3 +63,10 @@ query artists_collaboration {
     name
   }
 }
+
+query artistByArtistId {
+  artists(where: {id: 3}) {
+    id
+    name
+  }
+}
