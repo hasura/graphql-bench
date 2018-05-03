@@ -2,6 +2,8 @@
 
 set -e
 
+SCRIPT_DIR=$(dirname "$0")
+
 DEFAULT_RAVEN_URL="http://127.0.0.1:7080"
 
 RAVEN_URL=${RAVEN_URL:-$DEFAULT_RAVEN_URL}
@@ -27,7 +29,7 @@ init () {
     # wget -O chinook.sql -c 'https://github.com/xivSolutions/ChinookDb_Pg_Modified/raw/pg_names/chinook_pg_serial_pk_proper_naming.sql'
 
     # copy it into the container
-    docker cp chinook.data postgres-chinook:/chinook.data
+    docker cp "$SCRIPT_DIR/chinook.data" postgres-chinook:/chinook.data
     # import the data
     docker exec postgres-chinook pg_restore -h 127.0.0.1 -p 5432 -U admin -d chinook /chinook.data
 
@@ -41,7 +43,7 @@ init () {
     sleep 5
 
     # add raven metadata
-    yaml2json metadata.yaml | curl -d @- -XPOST -H 'X-Hasura-User-Id:0' -H 'X-Hasura-Role:admin' $RAVEN_URL/v1/query
+    cat "$SCRIPT_DIR/metadata.json" | curl -d @- -XPOST -H 'X-Hasura-User-Id:0' -H 'X-Hasura-Role:admin' $RAVEN_URL/v1/query
 }
 
 start () {
