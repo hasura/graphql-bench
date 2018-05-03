@@ -1,3 +1,4 @@
+pyyaml
 dash
 dash-renderer
 dash-html-components
