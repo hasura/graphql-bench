@@ -116,7 +116,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     query_results = json.load(args.results)
 
-    eprint("=" * 20, 0)
-    eprint("starting dash server for graphs", 0)
+    print("=" * 20)
+    print("starting dash server for graphs")
 
     run_dash_server(query_results)
