@@ -1,4 +1,8 @@
-Benchmark queries across various GraphQL backends. The database used is a [Postgres variant](https://github.com/xivSolutions/ChinookDb_Pg_Modified/tree/pg_names) of [Chinook](https://github.com/lerocha/chinook-database). The benchmarking tool used is [wrk2](https://github.com/giltene/wrk2), a derivative of [wrk](https://github.com/wg/wrk)
+Understanding the performance characteristics of your GraphQL backend is still hard. This is an extremely simple benchmarking tool for you to run common GraphQL queries against your GraphQL backend and get a preliminary sense of your backend's performance characteristics. 
+
+We built this benchmarking suite to benchmark different GraphQL data backends. The database used is a [Postgres variant](https://github.com/xivSolutions/ChinookDb_Pg_Modified/tree/pg_names) of [Chinook](https://github.com/lerocha/chinook-database). The benchmarking tool used is [wrk2](https://github.com/giltene/wrk2), a derivative of [wrk](https://github.com/wg/wrk).
+
+You can easily add your own GraphQL backend and your own GraphQL queries and run your benchmark.
 
 ## Running benchmarks
 
