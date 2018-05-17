@@ -1,0 +1,35 @@
+- name: query-comparison
+  warmup_duration: 60
+  duration: 300
+  candidates:
+  - name: hero_name
+    url: http://172.17.0.1:5000/graphql
+    query: HeroNameQuery
+    queries_file: queries.graphql
+  - name: hero_name_friends
+    url: http://172.17.0.1:5000/graphql
+    query: HeroNameFriendsQuery
+    queries_file: queries.graphql
+  rps:
+  - 100
+  - 200
+  - 300
+  - 400
+  - 500
+
+- name: webserver-comparison
+  warmup_duration: 60
+  duration: 100
+  candidates:
+  - name: uwsgi
+    url: http://172.17.0.1:5001/graphql
+    query: HeroNameQuery
+    queries_file: queries.graphql
+  - name: dev-server
+    url: http://172.17.0.1:5000/graphql
+    query: HeroNameQuery
+    queries_file: queries.graphql
+  rps:
+  - 100
+  - 200
+  - 300

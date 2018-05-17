@@ -19,18 +19,21 @@ fileLoc = os.path.dirname(os.path.abspath(__file__))
 def eprint(msg, indent):
     print((' ' * 2 * indent) + msg, file=sys.stderr)
 
-def runWrk2(programDir, programUrl, queryName, rps, openConns, duration):
+def runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript):
+
+    luaScript = luaScript if luaScript else os.path.join(fileLoc, "bench.lua")
+
     p = subprocess.run(
         ["wrk2",
          "-R", str(rps),
          "-c", str(openConns),
          "-d", str(duration),
          "-t", str(cpuCount),
-         "-s", os.path.join(programDir, "bench.lua"),
+         "-s", luaScript,
          "--timeout", "1s",
-         programUrl,
-         os.path.join(programDir, "queries.graphql"),
-         queryName
+         url,
+         queriesFile,
+         query
         ],
         env = dict(
             os.environ,
@@ -41,6 +44,7 @@ def runWrk2(programDir, programUrl, queryName, rps, openConns, duration):
         stderr=subprocess.PIPE,
         encoding='utf-8'
     )
+
     if p.returncode != 0:
         for l in p.stderr.splitlines():
             eprint(l, 3)
@@ -50,7 +54,7 @@ def runWrk2(programDir, programUrl, queryName, rps, openConns, duration):
             eprint(l, 3)
         return json.loads(p.stderr)
 
-def benchCandidate(programDir, programUrl, queryName, rpsList, openConns, duration):
+def benchCandidate(url, queriesFile, query, rpsList, openConns, duration, luaScript):
     results = {}
     for rps in rpsList:
         eprint("+" * 20, 3)
@@ -59,58 +63,62 @@ def benchCandidate(programDir, programUrl, queryName, rpsList, openConns, durati
             duration=duration,
             openConns=openConns
         ), 3)
-        res = runWrk2(programDir, programUrl, queryName, rps, openConns, duration)
+        res = runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript)
         results[rps] = res
     return results
 
 def benchQuery(benchParams):
 
-    queryName = benchParams["query"]
+    benchName = benchParams["name"]
 
     eprint("=" * 20, 0)
-    eprint("query: {}".format(queryName), 0)
+    eprint("benchmark: {}".format(benchName), 0)
 
     rpsList = benchParams["rps"]
-    timeout = benchParams["timeout"]
+    timeout = benchParams.get("timeout", 1)
     duration = benchParams["duration"]
-    openConns = benchParams["open_connections"]
+    openConns = benchParams.get("open_connections", 20)
     warmupDuration = benchParams.get("warmup_duration", None)
 
     results = {}
 
     for candidate in benchParams["candidates"]:
 
-        programDir = candidate["dir"]
-        programUrl = candidate["url"]
+        candidateName = candidate["name"]
+        candidateUrl = candidate["url"]
+        candidateQuery = candidate["query"]
+        candidateQueriesFile = candidate["queries_file"]
+        candidateLuaScript = candidate.get('lua_script')
 
         eprint("-" * 20, 1)
-        eprint("candidate: {} at {}".format(programDir, programUrl), 1)
+        eprint("candidate: {} on {} at {}".format(candidateQuery, candidateName, candidateUrl), 1)
 
         if warmupDuration:
             eprint("Warmup:", 2)
-            benchCandidate(programDir, programUrl, queryName, rpsList, openConns, warmupDuration)
+            benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery,
+                           rpsList, openConns, warmupDuration, candidateLuaScript)
 
         eprint("Benchmark:", 2)
-        candidateRes = benchCandidate(programDir, programUrl, queryName,
-                                      rpsList, openConns, duration)
-        results[programDir] = candidateRes
+        candidateRes = benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery,
+                                      rpsList, openConns, duration, candidateLuaScript)
+        results[candidateName] = candidateRes
 
     return {
-        "query": queryName,
+        "benchmark": benchName,
         "results": results
     }
 
 def bench(args):
-    querySpecs = yaml.load(args.spec)
-    query = args.query
-    if query:
-        querySpecs = list(filter(lambda qs: qs['query'] == query, querySpecs))
-        if not querySpecs:
-            print("No such query exists in the spec: {}".format(query))
+    benchSpecs = yaml.load(args.spec)
+    bench = args.bench
+    if bench:
+        benchSpecs = list(filter(lambda bs: bs['name'] == bench, benchSpecs))
+        if not benchSpecs:
+            print("no such benchmark exists in the spec: {}".format(query))
             sys.exit(1)
     results = []
-    for querySpec in querySpecs:
-        results.append(benchQuery(querySpec))
+    for benchSpec in benchSpecs:
+        results.append(benchQuery(benchSpec))
     return results
 
 if __name__ == "__main__":
@@ -118,7 +126,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--spec', nargs='?', type=argparse.FileType('r'),
         default=sys.stdin)
-    parser.add_argument('--query', nargs='?', type=str)
+    parser.add_argument('--bench', nargs='?', type=str)
     args = parser.parse_args()
     results = bench(args)
     run_dash_server(results)

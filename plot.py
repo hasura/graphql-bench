@@ -52,16 +52,16 @@ def get_ymetric_fn(yMetric):
         yMetricFn = lambda x: x['latency']['mean']
     return lambda x: None if round(yMetricFn(x)/1000, 2) > 1000 else round(yMetricFn(x)/1000, 2)
 
-def run_dash_server(query_results):
+def run_dash_server(bench_results):
 
     app = dash.Dash()
 
     app.layout = html.Div(children=[
 
-        html.Label('Query'),
+        html.Label('Benchmark'),
         dcc.Dropdown(
-            id='query-index',
-            options=[{'label':r['query'], 'value': i} for i, r in enumerate(query_results)],
+            id='benchmark-index',
+            options=[{'label':r['benchmark'], 'value': i} for i, r in enumerate(bench_results)],
             value='0'
         ),
 
@@ -85,14 +85,14 @@ def run_dash_server(query_results):
     @app.callback(
         Output('response-time-vs-rps', 'figure'),
         [
-            Input('query-index', 'value'),
+            Input('benchmark-index', 'value'),
             Input('response-time-metric', 'value')
         ]
     )
-    def updateGraph(queryIndex, yMetric):
-        queryIndex=int(queryIndex)
+    def updateGraph(benchMarkIndex, yMetric):
+        benchMarkIndex=int(benchMarkIndex)
         figure={
-            'data': get_data(query_results[queryIndex]['results'],get_ymetric_fn(yMetric)),
+            'data': get_data(bench_results[benchMarkIndex]['results'],get_ymetric_fn(yMetric)),
             'layout': {
                 'yaxis' : {
                     'title': "Response time ({}) in ms".format(yMetric)
@@ -100,7 +100,7 @@ def run_dash_server(query_results):
                 'xaxis' : {
                     'title': "Requests/sec"
                 },
-                'title' : 'Response time vs Requests/sec for {}'.format(query_results[queryIndex]['query'])
+                'title' : 'Response time vs Requests/sec for {}'.format(bench_results[benchMarkIndex]['benchmark'])
             }
         }
         return figure
@@ -114,9 +114,10 @@ if __name__ == '__main__':
         '--results', nargs='?', type=argparse.FileType('r'),
         default=sys.stdin)
     args = parser.parse_args()
-    query_results = json.load(args.results)
+    bench_results = json.load(args.results)
+    print(bench_results)
 
     print("=" * 20)
     print("starting dash server for graphs")
 
-    run_dash_server(query_results)
+    run_dash_server(bench_results)

@@ -1,3 +1,5 @@
+-- A library that can be used in custom lua scripts for benchmarking
+
 local _M = {}
 
 local json = require "json"
@@ -19,6 +21,13 @@ function _M.init(args)
   local operationName = args[2]
   local query = file_exists(queryFile)
   return json.encode({query=query,operationName=operationName})
+end
+
+function _M.request(wrk, req_body)
+  wrk.method = "POST"
+  wrk.headers["Content-Type"] = "application/json"
+  wrk.body = req_body
+  return wrk.format()
 end
 
 local function get_stat_summary(stat)

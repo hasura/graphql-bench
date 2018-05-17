@@ -1,0 +1,4 @@
+graphene
+flask
+flask-graphql
+gunicorn

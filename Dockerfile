@@ -19,7 +19,8 @@ RUN pip install -r /graphql-bench/requirements.txt
 
 COPY bench.py /graphql-bench/bench.py
 COPY plot.py /graphql-bench/plot.py
-COPY graphql-bench.lua /graphql-bench/graphql-bench.lua
+COPY bench-lib.lua /graphql-bench/bench-lib.lua
+COPY bench.lua /graphql-bench/bench.lua
 
 RUN mkdir -p /graphql-bench/ws
 WORKDIR /graphql-bench/ws/
