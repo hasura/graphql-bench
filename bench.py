@@ -79,6 +79,7 @@ def benchQuery(benchParams):
     duration = benchParams["duration"]
     openConns = benchParams.get("open_connections", 20)
     warmupDuration = benchParams.get("warmup_duration", None)
+    query = benchParams.get("query")
 
     results = {}
 
@@ -86,7 +87,7 @@ def benchQuery(benchParams):
 
         candidateName = candidate["name"]
         candidateUrl = candidate["url"]
-        candidateQuery = candidate["query"]
+        candidateQuery = candidate.get("query", query)
         candidateQueriesFile = candidate["queries_file"]
         candidateLuaScript = candidate.get('lua_script')
 
