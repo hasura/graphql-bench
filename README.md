@@ -37,7 +37,7 @@ You'll need `docker` installed on your machine. All the tooling necessary to run
 
 1. Run the benchmark(s).
    ```bash
-   cat bench.yaml | docker run -i --rm -p 8050:8050 -v $(pwd)/queries.graphql:/graphql-bench/ws/ hasura/graphql-bench:0.2
+   cat bench.yaml | docker run -i --rm -p 8050:8050 -v $(pwd)/queries.graphql:/graphql-bench/ws/queries.graphql hasura/graphql-bench:v0.3
    ```
 
 1. This opens up a http server at http://127.0.0.1:8050 which displays the results of the benchmark.
