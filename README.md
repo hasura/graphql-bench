@@ -1,6 +1,6 @@
 # graphql-bench
 
-A simple benchmarking tool to run your GraphQL queries against your GraphQL backend and get a preliminary sense of its  performance characteristics.
+A simple benchmarking tool to run GraphQL queries against your GraphQL backend and get a preliminary sense of its performance characteristics.
 
 ![comparison example](assets/example_comparison.png)
 
@@ -75,3 +75,7 @@ This file specifes the benchmarks that need to be run. The file is a list of ben
   - 200
   - 400
 ```
+
+## Note
+
+If you are looking for benchmarks of hasura, postgraphile and prisma head to this [repo](https://github.com/hasura/graphql-backend-benchmarks).
