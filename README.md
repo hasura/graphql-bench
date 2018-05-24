@@ -1,10 +1,12 @@
 # graphql-bench
 
-A simple benchmarking tool to run GraphQL queries against your GraphQL backend and get a preliminary sense of its performance characteristics.
+A simple benchmarking tool to run GraphQL queries against your GraphQL backend and get a preliminary sense of its performance characteristics. 
+
+Usage: You write your GrahphQL queries in a file, run a command, and your browser opens up with graphs :)
 
 ![comparison example](assets/example_comparison.png)
 
-- The benchmarking tool used is [wrk2](https://github.com/giltene/wrk2), a derivative of [wrk](https://github.com/wg/wrk).
+- The benchmarking tool used is [wrk2](https://github.com/giltene/wrk2) to measure [latency](https://news.ycombinator.com/item?id=10695953) [accurately](https://groups.google.com/forum/#!msg/mechanical-sympathy/icNZJejUHfE/BfDekfBEs_sJ).
 - The graphs are generated using [dash](https://github.com/plotly/dash).
 
 ## Running benchmarks
