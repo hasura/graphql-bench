@@ -80,4 +80,4 @@ This file specifes the benchmarks that need to be run. The file is a list of ben
 
 ## Note
 
-If you are looking for benchmarks of hasura, postgraphile and prisma head to this [repo](https://github.com/hasura/graphql-backend-benchmarks).
+If you are looking for benchmarks of [hasura](https://hasura.io), [postgraphile](https://www.graphile.org/postgraphile/) and [prisma](https://prisma.io) head to this [repo](https://github.com/hasura/graphql-backend-benchmarks).
