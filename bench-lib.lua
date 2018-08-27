@@ -19,13 +19,15 @@ function _M.init(args)
   -- args[0] is the url
   local queryFile = args[1]
   local operationName = args[2]
+  local headers = json.decode(args[3])
   local query = file_exists(queryFile)
-  return json.encode({query=query,operationName=operationName})
+  return headers, json.encode({query=query,operationName=operationName})
 end
 
-function _M.request(wrk, req_body)
+function _M.request(wrk, req_headers, req_body)
   wrk.method = "POST"
   wrk.headers["Content-Type"] = "application/json"
+  for k,v in pairs(req_headers) do wrk.headers[k] = v end
   wrk.body = req_body
   return wrk.format()
 end
