@@ -19,7 +19,7 @@ fileLoc = os.path.dirname(os.path.abspath(__file__))
 def eprint(msg, indent):
     print((' ' * 2 * indent) + msg, file=sys.stderr)
 
-def runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript):
+def runWrk2(url, queriesFile, query, headers, rps, openConns, duration, luaScript):
 
     luaScript = luaScript if luaScript else os.path.join(fileLoc, "bench.lua")
 
@@ -34,7 +34,8 @@ def runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript):
          "--timeout", "1s",
          url,
          queriesFile,
-         query
+         query,
+         json.dumps(headers or {})
         ],
         env = dict(
             os.environ,
@@ -55,7 +56,7 @@ def runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript):
             eprint(l, 3)
         return json.loads(p.stderr)
 
-def benchCandidate(url, queriesFile, query, rpsList, openConns, duration, luaScript):
+def benchCandidate(url, queriesFile, query, headers, rpsList, openConns, duration, luaScript):
     results = {}
     for rps in rpsList:
         eprint("+" * 20, 3)
@@ -64,7 +65,7 @@ def benchCandidate(url, queriesFile, query, rpsList, openConns, duration, luaScr
             duration=duration,
             openConns=openConns
         ), 3)
-        res = runWrk2(url, queriesFile, query, rps, openConns, duration, luaScript)
+        res = runWrk2(url, queriesFile, query, headers, rps, openConns, duration, luaScript)
         results[rps] = res
     return results
 
@@ -82,6 +83,7 @@ def benchQuery(benchParams):
     warmupDuration = benchParams.get("warmup_duration", None)
     query = benchParams.get("query")
     queriesFile = benchParams.get("queries_file")
+    headers = benchParams.get("headers")
 
     results = {}
 
@@ -91,6 +93,7 @@ def benchQuery(benchParams):
         candidateUrl = candidate["url"]
         candidateQuery = candidate.get("query", query)
         candidateQueriesFile = candidate.get("queries_file", queriesFile)
+        candidateHeaders = candidate.get("headers", headers)
         candidateLuaScript = candidate.get('lua_script')
 
         eprint("-" * 20, 1)
@@ -98,11 +101,11 @@ def benchQuery(benchParams):
 
         if warmupDuration:
             eprint("Warmup:", 2)
-            benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery,
+            benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery, candidateHeaders,
                            rpsList, openConns, warmupDuration, candidateLuaScript)
 
         eprint("Benchmark:", 2)
-        candidateRes = benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery,
+        candidateRes = benchCandidate(candidateUrl, candidateQueriesFile, candidateQuery, candidateHeaders,
                                       rpsList, openConns, duration, candidateLuaScript)
         results[candidateName] = candidateRes
 

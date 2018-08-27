@@ -7,12 +7,13 @@
 local gqbench = require "bench-lib"
 
 local req_body = ""
+local req_headers = {}
 function init(args)
-  req_body = gqbench.init(args)
+  req_headers, req_body = gqbench.init(args)
 end
 
 function request()
-  return gqbench.request(wrk, req_body)
+  return gqbench.request(wrk, req_headers, req_body)
 end
 
 function done(s, l, r)
