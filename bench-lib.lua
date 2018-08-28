@@ -3,6 +3,7 @@
 local _M = {}
 
 local json = require "json"
+local os = require "os"
 
 local function file_exists(file)
   local f = io.open(file, "r")
@@ -44,9 +45,14 @@ local function get_stat_summary(stat)
   }
 end
 
+local function getTime()
+  return os.date("%c %Z")
+end
+
 function _M.done(summary, latency, requests)
   io.stderr:write(
     json.encode({
+        time=getTime(),
         latency=get_stat_summary(latency),
         summary=summary,
         requests=get_stat_summary(requests)

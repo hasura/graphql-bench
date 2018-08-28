@@ -4,6 +4,7 @@ import dash
 from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
+import datetime
 
 import json
 import itertools
@@ -53,6 +54,9 @@ def get_ymetric_fn(yMetric):
     return lambda x: None if round(yMetricFn(x)/1000, 2) > 1000 else round(yMetricFn(x)/1000, 2)
 
 def run_dash_server(bench_results):
+
+    with open("/graphql-bench/ws/bench_results.json","w+") as resultFile:
+        json.dump(bench_results,resultFile)
 
     app = dash.Dash()
 
