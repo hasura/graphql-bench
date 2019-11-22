@@ -9,7 +9,7 @@ RUN make -C /tmp/wrk2-master
 
 FROM python:3.7-slim
 RUN apt-get update \
- && apt-get install -y lua-json libssl1.0.2 jq \
+ && apt-get install -y lua-json libssl1.1 jq \
  && apt-get clean
 
 COPY --from=wrk2-builder /tmp/wrk2-master/wrk /usr/bin/wrk2
