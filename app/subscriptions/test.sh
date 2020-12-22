@@ -1,0 +1,1 @@
+PG_CONNECTION_STRING=postgres://postgres:postgrespassword@localhost:5430/postgres ENDPOINT=https://hasura-pro-demo.hasura-app.io/v1/graphql LABEL=mylabel CONFIG_FILE_PATH=src/config_old.yaml ts-node src/index.ts

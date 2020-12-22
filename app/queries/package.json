@@ -1,0 +1,24 @@
+{
+  "name": "graphql-query-bench",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Gavin",
+  "license": "MIT",
+  "scripts": {
+    "run-benchmarks": "ts-node src/benchmarkExecutor.ts >/dev/tty && cat combined_output.json"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^9.0.1",
+    "@types/js-yaml": "^3.12.5",
+    "@types/k6": "^0.26.1",
+    "autocannon": "^4.6.0",
+    "execa": "^4.0.3",
+    "fs-extra": "^9.0.1",
+    "hdr-histogram-js": "^2.0.0-beta6",
+    "js-yaml": "^3.14.0",
+    "lookpath": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/autocannon": "^4.1.0"
+  }
+}

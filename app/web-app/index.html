@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GraphQL Bench Report</title>
+    <meta charset="UTF-8" />
+    <script src="https://unpkg.com/vue@next"></script>
+    <!-- jQuery only used for tooltips on hover for charts, could reasonably be removed -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- D3 v4 required for MetricsGraphics.js charts -->
+    <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <!-- Chart.js required for latency percentiles line chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@1.1.6"></script>
+    <!-- MetricsGraphics required for scatterplot and grouped bar-charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/metrics-graphics/3.0-alpha3/metricsgraphics.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/metrics-graphics/3.0-alpha3/metricsgraphics.min.css"
+    />
+    <link
+      href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body class="font-sans leading-normal tracking-normal bg-gray-400">
+    <div id="app"></div>
+    <script src="./index.js"></script>
+  </body>
+
+  <style>
+    body {
+      text-align: center;
+    }
+  </style>
+</html>

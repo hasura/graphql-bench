@@ -1,0 +1,47 @@
+url: http://localhost:8085/v1/graphql
+headers:
+  X-Hasura-Admin-Secret: my-secret
+queries:
+  - name: SearchAlbumsWithArtist
+    tools: [wrk2, k6, autocannon]
+    execution_strategy: REQUESTS_PER_SECOND
+    rps: 500
+    duration: 60s
+    query: |
+      query SearchAlbumsWithArtist {
+        albums(where: {title: {_like: "%Rock%"}}) {
+          id
+          title
+          artist {
+            name
+            id
+          }
+        }
+      }
+  # - name: AlbumByPK
+  #   tools: [autocannon, k6]
+  #   execution_strategy: FIXED_REQUEST_NUMBER
+  #   requests: 10000
+  #   query: |
+  #     query AlbumByPK {
+  #       albums_by_pk(id: 1) {
+  #         id
+  #         title
+  #       }
+  #     }
+  # - name: AlbumByPKMultiStage
+  #   tools: [k6]
+  #   execution_strategy: MULTI_STAGE
+  #   initial_rps: 0
+  #   stages:
+  #     - duration: 5s
+  #       target: 100
+  #     - duration: 5s
+  #       target: 1000
+  #   query: |
+  #     query AlbumByPK {
+  #       albums_by_pk(id: 1) {
+  #         id
+  #         title
+  #       }
+  #     }

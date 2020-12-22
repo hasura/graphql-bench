@@ -1,0 +1,25 @@
+url: http://localhost:8085/v1/graphql
+db_connection_string: postgres://postgres:postgrespassword@localhost:5430/postgres
+headers:
+  X-Hasura-Admin-Secret: my-secret
+config:
+  label: SearchAlbumsWithArtistUpdated
+  max_connections: 20
+  connections_per_second: 10
+  insert_payload_data: true
+  query: |
+    subscription AlbumByIDSubscription($artistIds: [Int!]!) {
+      albums(where: {artist_id: { _in: $artistIds}}) {
+        id
+        title
+        updated_at
+      }
+    }
+  variables:
+    # some_value: a_string
+    # some_range: { start: 1, end: 10 }
+    # another_range: { start: 50, end: 100 }
+    # some_number: 10
+    artistIds: [1, 2, 3, 4]
+  # some_object:
+  #   a_key: a_value
