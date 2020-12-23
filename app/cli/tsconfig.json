@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "importHelpers": true,
+    "module": "commonjs",
+    "outDir": "lib",
+    "rootDirs": ["src", "../queries/src", "../subscriptions/src"],
+    //"rootDir": "src",
+    "strict": true,
+    "target": "es2017",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"]
+}

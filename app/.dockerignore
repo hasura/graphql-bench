@@ -1,0 +1,16 @@
+# No node_modules from any directory
+node_modules
+**/node_modules
+
+# Don't copy the local dev wrk and k6 binaries, should use the ones from Dockerfile located at /usr/bin
+./queries/bin/k6/k6
+./queries/bin/wrk/wrk
+
+# No Markdown files besides README
+*.md
+!README*.md
+
+# No images (from README)
+*.gif
+*.png
+*.jpg

@@ -1,0 +1,19 @@
+version: '3.7'
+
+services:
+  graphql-bench:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: "host"
+    volumes:
+      - ./queries:/app/queries
+      - ./subscriptions:/app/subscriptions
+    #  - ./nodemon.json:/home/node/app/nodemon.json
+    
+    # expose:
+    #   - "8080"
+    # ports:
+    #   - "8080:8080"
+    #   - "9229:9229"
+    # command: npm start
