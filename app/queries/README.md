@@ -81,7 +81,7 @@ queries:
     execution_strategy: CUSTOM
     options:
       k6:
-        # /** Discard response bodies. */
+        # /** Discard response bodies. CAREFUL! This causes graphql errors to be ignored */
         # discardResponseBodies?: boolean;
 
         # /** Third party collector configuration. */

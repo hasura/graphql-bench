@@ -15,8 +15,9 @@ export default function () {
   let res = http.post(url, body, { headers })
 
   // Run assertions on status, errors in body, optionally results count
-  check(res, {
-    'is status 200': (r) => r.status === 200,
-    'no error in body': (r) => Boolean(r.json('errors')) == false,
-  })
+  let check_cxt = { 'is status 200': (r) => r.status === 200, }
+  if (res.body) { // unavailable if discardResponseBodies: true
+    check_cxt['no error in body'] = (r) => Boolean(r.json('errors')) == false
+  }
+  check(res, check_cxt)
 }
