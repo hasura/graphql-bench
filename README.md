@@ -91,6 +91,10 @@ EXAMPLE
 
 #### Queries/Mutations
 
+When running locally, add executable permission to the 
+* run binary at `app/cli/bin` by running `chmod +x run`
+* k6 binary at `app/queries/bin/k6/` by running `chmod +x k6`
+* wrk binary at `app/queries/bin/wrk/` by running `chmod +x wrk`
 ##### Config
 
 The Query/Mutation CLI bench expects a YAML config of the following format:

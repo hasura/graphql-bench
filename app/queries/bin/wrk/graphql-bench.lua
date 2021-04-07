@@ -53,9 +53,11 @@ function init(args)
 
   params = json.decode(params)
   --print_params(params)
-
-  for header, val in pairs(params['headers']) do
-    wrk.headers[header] = val
+  
+  if params['headers'] ~= nil then 
+    for header, val in pairs(params['headers']) do
+      wrk.headers[header] = val
+    end
   end
 
   wrk.body = json.encode({
