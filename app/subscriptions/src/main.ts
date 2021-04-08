@@ -5,10 +5,12 @@ import {
   yamlConfigToSocketManagerParams,
   COLORS,
 } from './utils'
+import Knex = require('knex')
+import { Model } from 'objection'
 import Reattempt from 'reattempt/dist/decorator'
 import WebSocket from 'ws'
 import WebSocketAsPromised from 'websocket-as-promised'
-import { Events, knexConnection } from './schema'
+import { Events } from './schema'
 import { observable, observe } from '@nx-js/observer-util'
 import logUpdate from 'log-update'
 
@@ -254,6 +256,11 @@ class Connection {
  * =====================
  */
 
+/**
+ * Connection Object. Actual connection creation happens in the main method.
+ */
+let knexConnection: Knex ;
+
 async function assertDatabaseConnection() {
   return knexConnection.raw('select 1+1 as result').catch((err: any) => {
     console.log('Failed to establish connection to database! Exiting...')
@@ -282,9 +289,26 @@ function prettyPrintConfig(options) {
  * =====================
  */
 
-export async function main(opts?: SubscriptionBenchConfig) {
-  const options: SubscriptionBenchConfig = opts || require('./utils').config
+export async function main(opts: SubscriptionBenchConfig) {
+  if (!opts) {
+    throw new Error("Subscription options invalid");
+  }
+  if (!opts.db_connection_string) {
+    throw new Error("DB Connection String not found");
+  }
 
+  // Open the DB connection using connection string from config file
+  let dbConfig = {
+    client: 'pg',
+    connection: opts.db_connection_string,
+    migrations: {
+      directory: './src/migrations',
+    },
+  } as Knex.Config;
+  knexConnection = Knex(dbConfig);
+  Model.knex(knexConnection);
+
+  const options: SubscriptionBenchConfig = opts;
   /**
    * Any time values change in these stats, run the below function
    * currently just updates the terminal output text with new data

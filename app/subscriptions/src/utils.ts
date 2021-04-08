@@ -3,11 +3,6 @@ import yaml from 'js-yaml'
 import fs from 'fs'
 import path from 'path'
 
-export const configFilePath =
-  process.env.CONFIG_FILE_PATH || path.join(__dirname, './config.yaml')
-export const configFile = fs.readFileSync(configFilePath, 'utf-8')
-export const config: SubscriptionBenchConfig = yaml.load(configFile)
-
 export const GQL = {
   START: 'start',
   STOP: 'stop',
