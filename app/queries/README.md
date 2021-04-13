@@ -79,6 +79,7 @@ headers:
 queries:
   - name: SearchAlbumsWithArtist
     execution_strategy: CUSTOM
+    tools: [k6, autocannon] # add the tools that will be added in options
     options:
       k6:
         # /** Discard response bodies. CAREFUL! This causes graphql errors to be ignored */

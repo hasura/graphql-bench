@@ -1,8 +1,4 @@
-import Knex = require('knex')
 import { Model } from 'objection'
-export const connection = require('../knexfile')
-export const knexConnection = Knex(connection)
-Model.knex(knexConnection)
 
 export class Events extends Model {
   label: string
