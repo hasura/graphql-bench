@@ -195,7 +195,7 @@ yarn install
 - Watch the tool-specific output during the benchmark to view live metrics
 - Save the output to a file, IE `report.json` 
 - Inspect `report.json` to view detailed statistics and histograms
-- Upload the `report.json` to the web viewer app for visual metrics
+- Open the `report.json` in the web viewer app (hosted at https://hasura.github.io/graphql-bench/app/web-app/) for visual metrics
 
 ---
 
