@@ -68,6 +68,7 @@ OPTIONS
   -c, --config=config    (required) Filepath to YAML config file for query benchmarks
   -h, --help             show CLI help
   -o, --outfile=outfile  Filepath to output JSON file containing benchmark stats
+  --url=url              URL to direct graphql queries; may override 'url' from the YAML config, which is optional if this flag is passed
 
 EXAMPLE
   $ graphql-bench query --config ./config.query.yaml --outfile results.json
