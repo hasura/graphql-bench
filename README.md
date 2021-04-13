@@ -68,6 +68,7 @@ OPTIONS
   -c, --config=config    (required) Filepath to YAML config file for query benchmarks
   -h, --help             show CLI help
   -o, --outfile=outfile  Filepath to output JSON file containing benchmark stats
+  --url=url              URL to direct graphql queries; may override 'url' from the YAML config, which is optional if this flag is passed
 
 EXAMPLE
   $ graphql-bench query --config ./config.query.yaml --outfile results.json
@@ -194,7 +195,7 @@ yarn install
 - Watch the tool-specific output during the benchmark to view live metrics
 - Save the output to a file, IE `report.json` 
 - Inspect `report.json` to view detailed statistics and histograms
-- Upload the `report.json` to the web viewer app for visual metrics
+- Open the `report.json` in the web viewer app (hosted at https://hasura.github.io/graphql-bench/app/web-app/) for visual metrics
 
 ---
 

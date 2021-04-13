@@ -32,15 +32,23 @@ export default class Query extends Command {
       multiple: false,
       description: 'Filepath to output JSON file containing benchmark stats',
     }),
+    url: flags.string({
+      required: false,
+      multiple: false,
+      description: 'URL to direct graphql queries; may override \'url\' from the YAML config, which is optional if this flag is passed',
+    }),
   }
 
   async run() {
     const { flags } = this.parse(Query)
 
     // Oclif, can't figure out how to generically type flags =/
-    const executor = new BenchmarkRunner(
-      (flags.config as unknown) as GlobalConfig
-    )
+    const config = (flags.config as unknown) as GlobalConfig
+    if (flags.url) {
+      // config.url may be omitted, else will be overridden:
+      config.url = flags.url
+    }
+    const executor = new BenchmarkRunner(config)
     const results = await executor.runBenchmarks()
 
     if (flags.outfile) {
