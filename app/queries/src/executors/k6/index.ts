@@ -29,6 +29,7 @@ import { BenchmarkExecutor, makeBenchmarkMetrics } from '../base'
 
 import execa from 'execa'
 import { lookpath } from 'lookpath'
+import { Utils } from '../base/utils'
 
 interface RunK6Metadata {
   queryName: string
@@ -41,11 +42,11 @@ export class K6Executor extends BenchmarkExecutor {
   private k6BinaryPath = path.join(__dirname, 'k6', 'k6')
   private reportPath = path.join(this.baseReportPath, 'k6')
 
-  public runCustomBench(bench: CustomBenchmark) {
+  public async runCustomBench(bench: CustomBenchmark) {
     // Need to set the url, headers, query, and variables ENV or it won't work
     if (bench.options.k6?.scenarios) {
       for (let scenario in bench.options.k6?.scenarios) {
-        bench.options.k6.scenarios[scenario].env = this._makeScenarioEnv(bench)
+        bench.options.k6.scenarios[scenario].env = await this._makeScenarioEnv(bench)
       }
     }
 
@@ -58,14 +59,14 @@ export class K6Executor extends BenchmarkExecutor {
     return this._runK6(metadata, bench.options.k6 as K6Options)
   }
 
-  public runMultiStageBench(bench: MultiStageBenchmark) {
+  public async runMultiStageBench(bench: MultiStageBenchmark) {
     const scenario: RampingArrivalRateExecutor = {
       executor: 'ramping-arrival-rate',
       startRate: bench.initial_rps,
       timeUnit: '1s',
       preAllocatedVUs: bench.connections || 10,
       stages: bench.stages,
-      env: this._makeScenarioEnv(bench),
+      env: await this._makeScenarioEnv(bench),
     }
 
     const queryName = this._makeBenchmarkName(bench)
@@ -81,14 +82,14 @@ export class K6Executor extends BenchmarkExecutor {
     })
   }
 
-  public runRequestsPerSecondBench(bench: RequestsPerSecondBenchmark) {
+  public async runRequestsPerSecondBench(bench: RequestsPerSecondBenchmark) {
     const scenario: ConstantArrivalRateExecutor = {
       executor: 'constant-arrival-rate',
       rate: bench.rps,
       timeUnit: '1s',
       duration: bench.duration,
       preAllocatedVUs: bench.connections || 10,
-      env: this._makeScenarioEnv(bench),
+      env: await this._makeScenarioEnv(bench),
     }
 
     const queryName = this._makeBenchmarkName(bench)
@@ -104,12 +105,12 @@ export class K6Executor extends BenchmarkExecutor {
     })
   }
 
-  public runFixedRequestNumberBench(bench: FixedRequestNumberBenchmark) {
+  public async runFixedRequestNumberBench(bench: FixedRequestNumberBenchmark) {
     const scenario: PerVUIterationsExecutor = {
       executor: 'per-vu-iterations',
       iterations: bench.requests / (bench.connections || 10),
       vus: bench.connections || 10,
-      env: this._makeScenarioEnv(bench),
+      env: await this._makeScenarioEnv(bench),
     }
 
     const queryName = this._makeBenchmarkName(bench)
@@ -125,12 +126,12 @@ export class K6Executor extends BenchmarkExecutor {
     })
   }
 
-  public runMaxRequestsInDurationBench(bench: MaxRequestsInDurationBenchmark) {
+  public async runMaxRequestsInDurationBench(bench: MaxRequestsInDurationBenchmark) {
     const scenario: ConstantVUExecutor = {
       executor: 'constant-vus',
       duration: bench.duration,
       vus: bench.connections || 10,
-      env: this._makeScenarioEnv(bench),
+      env: await this._makeScenarioEnv(bench),
     }
 
     const queryName = this._makeBenchmarkName(bench)
@@ -149,21 +150,24 @@ export class K6Executor extends BenchmarkExecutor {
   /**
    * Must return non-nested JSON for k6, hence the need to stringify headers and variables
    */
-  private _makeScenarioEnv(bench: Benchmark) {
+  private async _makeScenarioEnv(bench: Benchmark) {
     return {
       url: this.config.url,
       query: bench.query,
       headers: JSON.stringify(this.config.headers),
       variables: JSON.stringify(bench.variables),
+      fileVariables: JSON.stringify(await Utils.readVariablesFromFile(bench)) // Variables read from file
     }
   }
 
   private async getBinaryPath() {
-    const defaultPath = await lookpath('k6')
-    if (defaultPath) return defaultPath
+    // Prefer local binary to global one if local is present.
     const localK6Binary = path.join(this.localBinaryFolder, 'k6/k6')
     const localBinaryExists = await fs.pathExists(localK6Binary)
     if (localBinaryExists) return localK6Binary
+
+    const globalK6Path = await lookpath('k6')
+    if (globalK6Path) return globalK6Path
     throw new Error(
       'Could not find K6 binary either globally in $PATH or in local ./bin/k6 folder'
     )

@@ -4,10 +4,6 @@
 -- done     = function(summary, latency, requests)
 json = require "json"
 
--- Set the default HTTP method and empty "headers" table here
-wrk.method = "POST"
-wrk.headers = {}
-
 function tprint (tbl, indent)
   if not indent then indent = 0 end
   for k, v in pairs(tbl) do
@@ -45,33 +41,67 @@ function print_wrk_config()
   print('-----')
 end
 
+local threads = {}
+
+function setup(thread)
+   table.insert(threads, thread)
+end
+
 function init(args)
+  errorCount = 0
   url, params = args[0], args[1]
   -- print('url', url)
   -- print('params', params)
   if not params then print('ERROR: NO PARAMS PASSED TO WRK2') end
 
   params = json.decode(params)
-  --print_params(params)
-  
-  if params['headers'] ~= nil then 
-    for header, val in pairs(params['headers']) do
-      wrk.headers[header] = val
-    end
-  end
-
-  wrk.body = json.encode({
-    query = params['query'],
-    variables = params['variables'],
-  })
-
-  --print_wrk_config()
 end
 
 function request()
-  return wrk.request()
+  method = 'POST'
+  path = url
+  headers = params['headers']
+
+  mergedVariables = merge_config_variables_and_file_variables()
+
+  body = json.encode({
+    query = params['query'],
+    variables = mergedVariables
+  })
+  return wrk.format(method, path, headers, body)
 end
 
+-- Merges one row of the variables from CSV file with the variables from config. 
+-- Row is selected by running the iterator fileVariablesCurrentIndex and resetting it when it reaches the end of the variables from CSV file.
+fileVariablesCurrentIndex = 1
+function merge_config_variables_and_file_variables() 
+  bodyVariables = {} 
+  if params['variables'] then
+    bodyVariables = params['variables'] 
+  end
+
+  if params['fileVariables'] and table.getn(params['fileVariables']) ~=0 then
+    if fileVariablesCurrentIndex > table.getn(params['fileVariables']) then
+      fileVariablesCurrentIndex = 1
+    end
+    for k,v in pairs(params['fileVariables'][fileVariablesCurrentIndex]) do
+      bodyVariables[k] = v
+    end
+    fileVariablesCurrentIndex = fileVariablesCurrentIndex + 1
+  end  
+  return bodyVariables
+end
+
+-- TODO: Better error processing. Currently, only the count of errors are maintained and printed to console.
+function response(status, headers, body)
+  jsonBody = json.decode(body)
+  if jsonBody['errors'] or status ~= 200 then
+    errorCount = errorCount + 1
+  end
+end
+
+-- For smaller number of connections and requests, the Mean latency value turns out to be nan (in JSON encoding) and this function then throws error.
+-- So keep the rps/connections 10+ to get around the issue
 function format_summary_to_json(summary, latency)
   local stats = {
     requests = summary.requests,
@@ -123,6 +153,17 @@ end
 function done(summary, latency, requests)
   stats_table, json_stats = format_summary_to_json(summary, latency)
   io.stderr:write(json_stats)
+  allThreadsErrorCount = 0
+  for index, thread in ipairs(threads) do
+    allThreadsErrorCount = allThreadsErrorCount + thread:get("errorCount")
+  end
+  --Red colored output to console if there are any errors
+  if allThreadsErrorCount ~= 0 then
+    io.write("\x1B[31m")
+    print('Total error responses = ' ..allThreadsErrorCount)
+    io.write("\x1B[m")
+  end
+  
   -- Commenting out this file write, just grab it and parse it from stderr for now
   -- write_file('/tmp/wrk2-stats.json', json_stats)
 end
