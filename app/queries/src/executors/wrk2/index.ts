@@ -126,9 +126,9 @@ export class Wrk2Executor extends BenchmarkExecutor {
 
   public async runRequestsPerSecondBench(bench: RequestsPerSecondBenchmark) {
     const queryName = this._makeBenchmarkName(bench)
-    // console.log('Wrk2, runRequestsPerSecondBench:')
-    // console.log('Bench:', bench)
-    // console.log('queryName:', queryName)
+    console.log('Wrk2, runRequestsPerSecondBench:')
+    console.log('Bench:', bench)
+    console.log('queryName:', queryName)
     const metadata = {
       queryName,
       outputFile: `${queryName}.json`,
