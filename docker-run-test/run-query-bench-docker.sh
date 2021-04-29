@@ -10,6 +10,6 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 docker run --net=host -v "$SCRIPT_DIR":/app/tmp -it \
-  graphql-bench-test:latest query \
+  graphql-bench-local:latest query \
   --config="./tmp/config.query.yaml" \
   --outfile="./tmp/report.json"
