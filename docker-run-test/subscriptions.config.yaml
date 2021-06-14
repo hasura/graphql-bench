@@ -1,0 +1,17 @@
+url: http://localhost:8080/v1/graphql
+# Ignore db_connection_string, it doesn't matter
+db_connection_string: postgres://postgres:postgrespassword@localhost:5432/postgres
+config:
+  label: SearchAlbumsWithArtistUpdated
+  max_connections: 10000
+  connections_per_second: 100
+  insert_payload_data: false
+  query: |
+    subscription AlbumByIDSubscription($artistIds: [Int!]!) {
+      Album(where: {ArtistId: { _in: $artistIds}}) {
+        AlbumId
+        Title
+      }
+    }
+  variables:
+    artistIds: [1, 2, 3, 4]
