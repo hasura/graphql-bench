@@ -21,6 +21,9 @@ setup_containers: ## Sets up Hasura and Postgres Docker containers
 seed_chinook_database: ## Creates Chinook database schema & seed data in Hasura for testing
 	./containers/psql-seed-chinook.sh
 
+setup_events_table: ## Sets up events table for subscriptions
+	./containers/psql-setup-events-table.sh
+
 install_wrk2: ## Handles installing or cloning and compiling wrk2 from source on either Mac or Debian-based Linux (for local non-Docker development)
 	OS := $(shell uname)
 	ifeq ($(OS),Darwin)
