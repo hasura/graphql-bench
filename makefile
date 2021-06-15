@@ -24,6 +24,9 @@ seed_chinook_database: ## Creates Chinook database schema & seed data in Hasura 
 setup_events_table: ## Sets up events table for subscriptions
 	./containers/psql-setup-events-table.sh
 
+run_update_rows_mssql: ## Updates rows to trigger data events
+	./containers/mssql-update-rows.sh
+
 install_wrk2: ## Handles installing or cloning and compiling wrk2 from source on either Mac or Debian-based Linux (for local non-Docker development)
 	OS := $(shell uname)
 	ifeq ($(OS),Darwin)
@@ -56,6 +59,8 @@ install_k6: ## Handles installing k6 either Mac or Debian-based Linux (for local
 
 setup_all: ## Sets up containers and then creates Chinook database
 setup_all: setup_containers create_chinook_database
+benchmark_mssql: run_update_rows_mssql run_docker_subscription_bench
+# benchmark_mssql: setup_all seed_chinook_database setup_events_table build_local_docker_image run_docker_subscription_bench run_update_rows_mssql
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
