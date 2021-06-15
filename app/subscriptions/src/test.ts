@@ -1,9 +1,9 @@
 import { SubscriptionBenchConfig } from './utils'
 import { main as runSubscriptionBenchmark } from './main'
 const testConfig: SubscriptionBenchConfig = {
-  url: 'http://localhost:8181/v1/graphql',
+  url: 'http://localhost:8085/v1/graphql',
   db_connection_string:
-    'postgres://postgres:postgres@127.0.0.1:25432/postgres',
+    'postgres://postgres:postgrespassword@localhost:5430/postgres',
   headers: {},
   config: {
     label: 'SearchAlbumsWithArtist',

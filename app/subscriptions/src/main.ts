@@ -265,7 +265,7 @@ async function assertDatabaseConnection() {
   return knexConnection.raw('select 1+1 as result').catch((err: any) => {
     console.log('Failed to establish connection to database! Exiting...')
     console.log(err)
-    process.exit(1)
+    process.exit(0)
   })
 }
 
@@ -397,5 +397,5 @@ async function exit(socketManager: SocketManager) {
   }
 
   console.log('Now exiting the process')
-  process.exit(1)
+  process.exit(0)
 }

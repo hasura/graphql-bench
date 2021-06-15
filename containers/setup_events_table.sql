@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS public.events;
 CREATE TABLE public.events (
   -- unique label to identify benchmark
   label text NOT NULL,

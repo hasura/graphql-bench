@@ -18,17 +18,23 @@ run_docker_subscription_bench: ## Runs local docker container subscription bench
 run_docker_subscription_bench_mssql: ## Runs local docker container subscription benchmark, using config.mssql.subscription.yaml in ./docker-run-test
 	./docker-run-test/run-subscription-bench-docker.sh "config.mssql.subscription.yaml"
 
-setup_containers: ## Sets up Hasura and Postgres Docker containers
-	cd containers && docker-compose up -d
+setup_containers: ## Sets up Hasura, Postgres and SQL Server Docker containers
+	cd containers && docker-compose up -d --force-recreate
 
 seed_chinook_database: ## Creates Chinook database schema & seed data in Hasura for testing
 	./containers/psql-seed-chinook.sh
+
+seed_chinook_database_mssql: ## Creates Chinook database schema & seed data in Hasura for testing
+	./containers/mssql-seed-chinook.sh
 
 setup_events_table: ## Sets up events table for subscriptions
 	./containers/psql-setup-events-table.sh
 
 run_update_rows_mssql: ## Updates rows to trigger data events
 	./containers/mssql-update-rows.sh
+
+cleanup:
+	cd containers && docker-compose stop && docker-compose rm
 
 install_wrk2: ## Handles installing or cloning and compiling wrk2 from source on either Mac or Debian-based Linux (for local non-Docker development)
 	OS := $(shell uname)
@@ -61,7 +67,8 @@ install_k6: ## Handles installing k6 either Mac or Debian-based Linux (for local
 	endif
 
 setup_all: ## Sets up containers and then creates Chinook database
-setup_all: setup_containers seed_chinook_database setup_events_table
+	setup_containers setup_events_table
+setup_mssql: setup_containers setup_events_table seed_chinook_database_mssql build_local_docker_image
 benchmark_mssql: run_update_rows_mssql run_docker_subscription_bench_mssql
 
 help:

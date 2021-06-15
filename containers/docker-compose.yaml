@@ -5,15 +5,13 @@ services:
     restart: always
     ports:
       - 5430:5432
-    volumes:
-      - db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: postgrespassword
   mssql:
     image: hasura/mssql-server-2019-cu10-ubuntu-20.04:latest
     restart: always
     ports:
-      - 1434:1433
+      - 1430:1433
     environment:
       SA_PASSWORD: hasuraMSSQL1
   graphql-engine:
@@ -26,5 +24,3 @@ services:
     environment:
       HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
       HASURA_GRAPHQL_ENABLE_CONSOLE: 'true' # set to "false" to disable console
-volumes:
-  db_data:
