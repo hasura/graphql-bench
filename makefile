@@ -12,8 +12,11 @@ build_local_docker_image: ## Builds ands tags a local docker image of graphql-be
 run_docker_query_bench: ## Runs local docker container query benchmark, using config.query.yaml in ./docker-run-test
 	./docker-run-test/run-query-bench-docker.sh
 
-run_docker_subscription_bench: ## Runs local docker container subscription benchmark, using config.subscription.yaml in ./docker-run-test
-	./docker-run-test/run-subscription-bench-docker.sh
+run_docker_subscription_bench: ## Runs local docker container subscription benchmark, using the default config.subscription.yaml in ./docker-run-test
+	./docker-run-test/run-subscription-bench-docker.sh "config.subscription.yaml"
+
+run_docker_subscription_bench_mssql: ## Runs local docker container subscription benchmark, using config.mssql.subscription.yaml in ./docker-run-test
+	./docker-run-test/run-subscription-bench-docker.sh "config.mssql.subscription.yaml"
 
 setup_containers: ## Sets up Hasura and Postgres Docker containers
 	cd containers && docker-compose up -d
@@ -58,9 +61,8 @@ install_k6: ## Handles installing k6 either Mac or Debian-based Linux (for local
 	endif
 
 setup_all: ## Sets up containers and then creates Chinook database
-setup_all: setup_containers create_chinook_database
-benchmark_mssql: run_update_rows_mssql run_docker_subscription_bench
-# benchmark_mssql: setup_all seed_chinook_database setup_events_table build_local_docker_image run_docker_subscription_bench run_update_rows_mssql
+setup_all: setup_containers seed_chinook_database setup_events_table
+benchmark_mssql: run_update_rows_mssql run_docker_subscription_bench_mssql
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
