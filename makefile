@@ -1,4 +1,4 @@
-.PHONY: run_docker_query_bench run_docker_subscription_bench seed_chinook_database help 
+.PHONY: run_docker_query_bench run_docker_subscription_bench seed_chinook_database help
 
 00000000: ## --------------------------------------------------
 00README: ## RECOMMENDED PROCESS: setup_containers -> seed_chinook_database -> build_local_docker_image -> run_docker_query_bench

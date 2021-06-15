@@ -10,5 +10,5 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 docker run --net=host -v "$SCRIPT_DIR":/app/tmp -it \
-  graphql-bench-test:latest subscription \
+  graphql-bench-local:latest subscription \
   --config="./tmp/config.subscription.yaml"
