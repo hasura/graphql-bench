@@ -1,7 +1,6 @@
 {
   "type": "bulk",
   "source": "mssql",
-  "resource_version": 9,
   "args": [
     {
       "type": "mssql_track_table",
