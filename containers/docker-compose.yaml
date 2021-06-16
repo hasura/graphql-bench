@@ -7,13 +7,14 @@ services:
       - 5430:5432
     environment:
       POSTGRES_PASSWORD: postgrespassword
-  mssql:
-    image: hasura/mssql-server-2019-cu10-ubuntu-20.04:latest
-    restart: always
+  # DRIVER={ODBC Driver 17 for SQL Server};SERVER=msserver;Uid=SA;Pwd=testPassword123
+  msserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
     ports:
-      - 1430:1433
+      - 1433:1433
     environment:
-      SA_PASSWORD: hasuraMSSQL1
+      SA_PASSWORD: "testPassword123"
+      ACCEPT_EULA: "Y"
   graphql-engine:
     image: hasura/graphql-engine:v2.0.0-beta.1
     ports:

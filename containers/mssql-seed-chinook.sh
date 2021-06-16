@@ -1,13 +1,13 @@
 #!/bin/bash
 
 MSSQLUSER=sa
-MSSQLPASS=hasuraMSSQL1
-MSSQLADDRESS=localhost,1430
+MSSQLPASS=testPassword123
+MSSQLADDRESS=localhost,1433
 # SCRIPT_DIR points to the absolute path of this file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SEEDFILE=$SCRIPT_DIR/Chinook_SqlServer.sql
 METADATA_URL=http://localhost:8085/v1/metadata
-MSSQL_DB_URL="DRIVER={ODBC Driver 17 for SQL Server};SERVER=$MSSQLADDRESS;Uid=$MSSQLUSER;Pwd=$MSSQLPASS;"
+MSSQL_DB_URL="DRIVER={ODBC Driver 17 for SQL Server};SERVER=msserver;Uid=SA;Pwd=testPassword123"
 MSSQL_CMD="sqlcmd -S $MSSQLADDRESS -U $MSSQLUSER -P $MSSQLPASS"
 
 function mssql_wait {

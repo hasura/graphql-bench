@@ -1,7 +1,7 @@
 #!/bin/bash
 MSSQLUSER=sa
-MSSQLPASS=hasuraMSSQL1
-MSSQLADDRESS=localhost,1430
+MSSQLPASS=testPassword123
+MSSQLADDRESS=localhost,1433
 
 update_rows() {
   sqlcmd -S $MSSQLADDRESS -U $MSSQLUSER -P $MSSQLPASS  \
