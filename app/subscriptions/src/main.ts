@@ -123,8 +123,8 @@ export class SocketManager {
       this.connections[socketId] = connection
       return connection
     } catch (err) {
-      console.log('Caught error when calling spawnConnection()', err)
-      throw err
+      console.log('Caught error when calling spawnConnection(), exiting', err)
+      process.exit(1)
     }
   }
 }

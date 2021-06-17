@@ -1,0 +1,260 @@
+{
+  "type": "bulk",
+  "source": "mssql",
+  "resource_version": 3,
+  "args": [
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Artist",
+        "table": { "name": "Album", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "ArtistId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Tracks",
+        "table": { "name": "Album", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Track", "schema": "dbo" },
+            "column": "AlbumId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Albums",
+        "table": { "name": "Artist", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Album", "schema": "dbo" },
+            "column": "ArtistId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Employee",
+        "table": { "name": "Customer", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "SupportRepId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Invoices",
+        "table": { "name": "Customer", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Invoice", "schema": "dbo" },
+            "column": "CustomerId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Employee",
+        "table": { "name": "Employee", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "ReportsTo" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Customers",
+        "table": { "name": "Employee", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Customer", "schema": "dbo" },
+            "column": "SupportRepId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Employees",
+        "table": { "name": "Employee", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Employee", "schema": "dbo" },
+            "column": "ReportsTo"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Tracks",
+        "table": { "name": "Genre", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Track", "schema": "dbo" },
+            "column": "GenreId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Customer",
+        "table": { "name": "Invoice", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "CustomerId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "InvoiceLines",
+        "table": { "name": "Invoice", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "InvoiceLine", "schema": "dbo" },
+            "column": "InvoiceId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Invoice",
+        "table": { "name": "InvoiceLine", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "InvoiceId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Track",
+        "table": { "name": "InvoiceLine", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "TrackId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "Tracks",
+        "table": { "name": "MediaType", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "Track", "schema": "dbo" },
+            "column": "MediaTypeId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "PlaylistTracks",
+        "table": { "name": "Playlist", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "PlaylistTrack", "schema": "dbo" },
+            "column": "PlaylistId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Playlist",
+        "table": { "name": "PlaylistTrack", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "PlaylistId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Track",
+        "table": { "name": "PlaylistTrack", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "TrackId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Album",
+        "table": { "name": "Track", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "AlbumId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "Genre",
+        "table": { "name": "Track", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "GenreId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_object_relationship",
+      "args": {
+        "name": "MediaType",
+        "table": { "name": "Track", "schema": "dbo" },
+        "using": { "foreign_key_constraint_on": "MediaTypeId" },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "InvoiceLines",
+        "table": { "name": "Track", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "InvoiceLine", "schema": "dbo" },
+            "column": "TrackId"
+          }
+        },
+        "source": "mssql"
+      }
+    },
+    {
+      "type": "mssql_create_array_relationship",
+      "args": {
+        "name": "PlaylistTracks",
+        "table": { "name": "Track", "schema": "dbo" },
+        "using": {
+          "foreign_key_constraint_on": {
+            "table": { "name": "PlaylistTrack", "schema": "dbo" },
+            "column": "TrackId"
+          }
+        },
+        "source": "mssql"
+      }
+    }
+  ]
+}
