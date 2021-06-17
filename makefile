@@ -27,6 +27,9 @@ seed_chinook_database: ## Creates Chinook database schema & seed data in Hasura 
 seed_chinook_database_mssql: ## Creates Chinook database schema & seed data in Hasura for testing
 	./containers/mssql-seed-chinook.sh
 
+teardown_chinook_database_mssql: ## Untracks tables before deleting them, needed due to https://github.com/hasura/graphql-engine-mono/issues/1435
+	./containers/mssql-teardown-chinook.sh
+
 setup_events_table: ## Sets up events table for subscriptions
 	./containers/psql-setup-events-table.sh
 
@@ -69,7 +72,9 @@ install_k6: ## Handles installing k6 either Mac or Debian-based Linux (for local
 setup_all: ## Sets up containers and then creates Chinook database
 	setup_containers setup_events_table
 setup_mssql: setup_containers setup_events_table seed_chinook_database_mssql build_local_docker_image
-benchmark_mssql: run_update_rows_mssql run_docker_subscription_bench_mssql
+run_benchmark_mssql: run_docker_subscription_bench_mssql run_update_rows_mssql
+teardown_mssql: teardown_chinook_database_mssql cleanup
+benchmark_mssql: setup_mssql run_benchmark_mssql teardown_mssql
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

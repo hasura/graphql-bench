@@ -8,7 +8,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SEEDFILE=$SCRIPT_DIR/Chinook_SqlServer.sql
 METADATA_URL=http://localhost:8085/v1/metadata
 MSSQL_DB_URL="DRIVER={ODBC Driver 17 for SQL Server};SERVER=msserver;Uid=SA;Pwd=testPassword123"
-MSSQL_CMD="sqlcmd -S $MSSQLADDRESS -U $MSSQLUSER -P $MSSQLPASS"
 
 function mssql_wait {
   echo -n "Waiting for mssql to come up"
