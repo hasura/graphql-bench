@@ -1,7 +1,10 @@
 #!/bin/bash
 VERSION=v0.36.0 # use the latest release version from https://github.com/google/cadvisor/releases
 
-sudo docker run \
+echo "Starting cAdvisor..."
+echo "Visit localhost:8090 to view Docker container statistics"
+
+docker run \
   --volume=/:/rootfs:ro \
   --volume=/var/run:/var/run:ro \
   --volume=/sys:/sys:ro \

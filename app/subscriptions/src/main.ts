@@ -123,8 +123,8 @@ export class SocketManager {
       this.connections[socketId] = connection
       return connection
     } catch (err) {
-      console.log('Caught error when calling spawnConnection()', err)
-      throw err
+      console.log('Caught error when calling spawnConnection(), exiting', err)
+      process.exit(1)
     }
   }
 }
@@ -265,7 +265,7 @@ async function assertDatabaseConnection() {
   return knexConnection.raw('select 1+1 as result').catch((err: any) => {
     console.log('Failed to establish connection to database! Exiting...')
     console.log(err)
-    process.exit(0)
+    process.exit(1)
   })
 }
 
@@ -397,5 +397,5 @@ async function exit(socketManager: SocketManager) {
   }
 
   console.log('Now exiting the process')
-  process.exit(0)
+  process.exit(1)
 }

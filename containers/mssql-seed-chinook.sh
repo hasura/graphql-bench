@@ -35,3 +35,7 @@ sqlcmd -S $MSSQLADDRESS -U $MSSQLUSER -P $MSSQLPASS -i "$SEEDFILE"
 echo ""
 echo "Tracking tables"
 curl "$METADATA_URL" --data-binary "@$SCRIPT_DIR/mssql_track_chinook_tables.json"
+
+echo ""
+echo "Tracking foreign-key relationships"
+curl "$METADATA_URL" --data-binary "@$SCRIPT_DIR/mssql_track_chinook_relationships.json"

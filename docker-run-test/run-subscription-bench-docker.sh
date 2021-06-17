@@ -10,6 +10,6 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 subscription_config=${1:-config.subscription.yaml}
 
-docker run --net=host -v "$SCRIPT_DIR":/app/tmp -it \
+docker run --name containers_graphql_bench_subs_1 --net=host -v "$SCRIPT_DIR":/app/tmp -it \
   graphql-bench-local:latest subscription \
   --config="./tmp/$subscription_config"
