@@ -397,5 +397,5 @@ async function exit(socketManager: SocketManager) {
   }
 
   console.log('Now exiting the process')
-  process.exit(1)
+  process.exit(0)
 }
