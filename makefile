@@ -78,13 +78,12 @@ setup_all: ## Sets up containers and then creates Chinook database
 # Subscriptions / Postgres
 setup_psql: setup_containers setup_events_table seed_chinook_database build_local_docker_image
 run_benchmark_psql: run_docker_subscription_bench run_update_rows
-benchmark_psql: setup_psql run_benchmark_psql
+benchmark_psql: setup_psql run_benchmark_psql cleanup
 
 # Subscriptions / SQL Server
 setup_mssql: setup_containers setup_events_table seed_chinook_database_mssql build_local_docker_image
 run_benchmark_mssql: run_docker_subscription_bench_mssql run_update_rows_mssql
-benchmark_mssql: setup_mssql run_benchmark_mssql
-# benchmark_mssql: setup_mssql run_benchmark_mssql cleanup
+benchmark_mssql: setup_mssql run_benchmark_mssql cleanup
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

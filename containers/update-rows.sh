@@ -3,7 +3,6 @@
 # SCRIPT_DIR points to the absolute path of this file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-
 # backend can be psql or mssql
 backend="${1:-psql}"
 update_rows_file=$SCRIPT_DIR/${backend}-update-rows.sh
