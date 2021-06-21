@@ -27,6 +27,7 @@ import fs from 'fs-extra'
 import execa from 'execa'
 import { lookpath } from 'lookpath'
 import { encodeIntoCompressedBase64 } from 'hdr-histogram-js'
+import { reconstructHdrHistogramFromText } from '../../utils'
 
 export class Wrk2Executor extends BenchmarkExecutor {
   public tool = BenchmarkTool.WRK2
@@ -217,7 +218,5 @@ export class Wrk2Executor extends BenchmarkExecutor {
     return metrics
   }
 }
-function reconstructHdrHistogramFromText(hdrHistogramStdout: string): import("hdr-histogram-js/dist/Histogram").default {
-  throw new Error('Function not implemented.')
-}
+
 

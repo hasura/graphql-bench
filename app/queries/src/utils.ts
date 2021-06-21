@@ -158,5 +158,5 @@ function reconstructHdrHistogramFromParsed(
   return histogram
 }
 
-const reconstructHdrHistogramFromText = (text: string) =>
+export const reconstructHdrHistogramFromText = (text: string) =>
   reconstructHdrHistogramFromParsed(parseHdrHistogram(text))
