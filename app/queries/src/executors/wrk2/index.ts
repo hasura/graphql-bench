@@ -26,6 +26,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import execa from 'execa'
 import { lookpath } from 'lookpath'
+import { Utils } from '../base/utils'
 
 export class Wrk2Executor extends BenchmarkExecutor {
   public tool = BenchmarkTool.WRK2
@@ -118,6 +119,7 @@ export class Wrk2Executor extends BenchmarkExecutor {
         query: bench.query,
         variables: bench.variables,
         headers: this.config.headers,
+        fileVariables: await Utils.readVariablesFromFile(bench)
       },
     })
   }
@@ -138,11 +140,13 @@ export class Wrk2Executor extends BenchmarkExecutor {
         latency: true,
         duration: bench.duration,
         rate: bench.rps,
+        connections: bench.connections // Add connections
       },
       config: {
         query: bench.query,
         variables: bench.variables,
         headers: this.config.headers,
+        fileVariables: await Utils.readVariablesFromFile(bench)
       },
     })
   }
@@ -162,12 +166,14 @@ export class Wrk2Executor extends BenchmarkExecutor {
     return args
   }
 
-  private async getBinaryPath() {
-    const defaultPath = await lookpath('wrk')
-    if (defaultPath) return defaultPath
+  private async getBinaryPath() {    
+    //  If available, Prefer local binary to wrk binary in PATH
     const localWrkBinary = path.join(this.localBinaryFolder, 'wrk/wrk')
     const localBinaryExists = await fs.pathExists(localWrkBinary)
     if (localBinaryExists) return localWrkBinary
+
+    const defaultPath = await lookpath('wrk')
+    if (defaultPath) return defaultPath
     throw new Error(
       'Could not find wrk binary either globally in $PATH or in local ./bin/wrk folder'
     )
@@ -194,7 +200,7 @@ export class Wrk2Executor extends BenchmarkExecutor {
     const output = await wrk
     const end = new Date()
 
-    const stats = JSON.parse(output.stderr)
+    const stats = (output.stderr) ? JSON.parse(output.stderr): null;
     // Also emits these same stats to stderr, so could make script not write stat file and just read from there
     // const stats: Wrk2StatsOutputJson = await fs.readJSON('/tmp/wrk2-stats.json')
     if (!stats) throw new Error('Failed reading stats output from wrk stderr')

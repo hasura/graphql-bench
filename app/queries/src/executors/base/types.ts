@@ -59,6 +59,11 @@ interface _BenchmarkRunConfig {
   query: string
   variables?: Record<string, any>
   connections?: number
+  variable_file?: VariableFile
+}
+
+export interface VariableFile {
+  file_path: string
 }
 
 /**

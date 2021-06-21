@@ -145,12 +145,15 @@ queries:
     execution_strategy: FIXED_REQUEST_NUMBER
     requests: 10000
     query: |
-      query AlbumByPK {
-        albums_by_pk(id: 1) {
+      query AlbumByPK($id: Int!) {
+        albums_by_pk(id: $id) {
           id
           title
         }
       }
+    # Optional variables (if the query/mutation uses variables)
+    variables:
+      id: 1
   - name: AlbumByPKMultiStage
     tools: [k6]
     execution_strategy: MULTI_STAGE
@@ -161,12 +164,15 @@ queries:
       - duration: 5s
         target: 1000
     query: |
-      query AlbumByPK {
-        albums_by_pk(id: 1) {
+      query AlbumByPK($id: Int!) {
+        albums_by_pk(id: $id) {
           id
           title
         }
-      }
+      }    
+    # Supply variables (Optional) from CSV file. Each row in the CSV is used in a request. (If 100 rows are provided, 100 queries with different variables are fired). The first row in the CSV must be name of the the variable. This can be used in tandem with the above variables.
+    variable_file:
+      file_path: './text.csv' # CSV file path releative to the config file
 ```
 
 ##### Run with Docker
@@ -242,6 +248,9 @@ config:
     artistIds: [1, 2, 3, 4]
     some_object:
       a_key: a_value
+  # Supply variables (Optional) from CSV file. Each row in the CSV is used in a Subscription.  The first row in the CSV must be name of the the variable. This can be used in tandem with the above variables.
+  variable_file:
+    file_path: './text.csv' # CSV file path releative to the config file
 ```
 
 ##### Note: Required Table

@@ -68,7 +68,7 @@ export abstract class BenchmarkExecutor {
   public config: GlobalConfig
 
   /** Path to the configuration file to load */
-  private configPath = path.join(__dirname, '../../config.yaml')
+  // private configPath = path.join(__dirname, '../../config.yaml')
   /** Path to the reports directory */
   public baseReportPath = path.join(__dirname, '../../../reports')
 
@@ -99,8 +99,8 @@ export abstract class BenchmarkExecutor {
     }
   }
 
-  public readConfigFile(pathTo?: string): GlobalConfig {
-    const configFile = fs.readFileSync(pathTo || this.configPath, 'utf-8')
+  public readConfigFile(pathTo: string): GlobalConfig {
+    const configFile = fs.readFileSync(pathTo , 'utf-8')
     return yaml.load(configFile)
   }
 

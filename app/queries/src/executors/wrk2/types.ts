@@ -9,6 +9,7 @@ export interface Wrk2BinaryArgs {
     query: string
     variables?: Record<string, any>
     headers?: Record<string, any>
+    fileVariables?: Record<string, any>
   }
 }
 

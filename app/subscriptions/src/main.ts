@@ -71,6 +71,7 @@ export interface SockerManagerConfig {
   label: string
   endpoint: string
   variables: object
+  fileVariables?: any[]
   headers?: Record<string, string>
   maxConnections: number
   insertPayloadData: boolean
@@ -84,6 +85,7 @@ export class SocketManager {
   public connections: { [id: number]: Connection } = {}
   public config: SockerManagerConfig
   public queryArgGenerator: Iterator<any>
+  private fileVariablesCurrentIndex = 0;
 
   constructor(config: SockerManagerConfig) {
     this.config = config
@@ -109,10 +111,26 @@ export class SocketManager {
       .insertGraph(this.allEvents)
   }
 
+/**
+ * Returns a row from the CSV by running an iterator. If the iterator exceeds the number of rows in the file, it is reset.
+ * @returns One row from the CSV file determined by fileVariablesCurrentIndex
+ */
+  private getRowFromFileVariables() {
+    if (this.fileVariablesCurrentIndex >= this.config.fileVariables.length) {
+      this.fileVariablesCurrentIndex = 0;
+    }
+    const output = this.config.fileVariables[this.fileVariablesCurrentIndex];
+    this.fileVariablesCurrentIndex++;
+    return output;
+  }
+
   public async spawnConnection() {
     const socketId = this.nextSocketId++
     const socketManagerConfig = this.config
-    const queryVariables = this.queryArgGenerator.next().value
+    let queryVariables = this.queryArgGenerator.next().value
+    if (this.config.fileVariables.length !=0) {
+      queryVariables = {...queryVariables, ...this.getRowFromFileVariables()}
+    }
     try {
       const connection = new Connection({
         id: socketId,
@@ -269,7 +287,7 @@ async function assertDatabaseConnection() {
   })
 }
 
-function prettyPrintConfig(options) {
+function prettyPrintConfig(options: SubscriptionBenchConfig) {
   console.table({
     url: options.url,
     db_connection_string: options.db_connection_string,
@@ -281,6 +299,8 @@ function prettyPrintConfig(options) {
     'connections_per_second',
   ])
   console.table({ variables: options.config.variables })
+  if (options.config.variable_file) console.table({ variable_file: options.config.variable_file.file_path })
+  
 }
 
 /**
@@ -345,11 +365,17 @@ export async function main(opts: SubscriptionBenchConfig) {
    * Execution
    */
 
-  const socketManagerParams = yamlConfigToSocketManagerParams(options)
+  const socketManagerParams = await yamlConfigToSocketManagerParams(options)
   const socketManager = new SocketManager(socketManagerParams)
 
   const MAX_CONNECTIONS = options.config.max_connections
-  const SPAWN_RATE = 1000 / options.config.connections_per_second
+
+  let SPAWN_RATE;
+  if (options.config.connections_per_second > 0) {
+    SPAWN_RATE = 1000 / options.config.connections_per_second    
+  } else {
+    SPAWN_RATE = 0; // Open connections as fast as possible
+  }  
 
   let socketSpawned = 0
   const spawnFn = () => {
