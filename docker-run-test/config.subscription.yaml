@@ -11,8 +11,8 @@ config:
     subscription AlbumByIDSubscription($artistIds: [Int!]!) {
       albums(where: {artist_id: { _in: $artistIds}}) {
         id
+        artist_id
         title
-        updated_at
       }
     }
   variables:

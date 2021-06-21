@@ -19,7 +19,7 @@ run_docker_subscription_bench_mssql: ## Runs local docker container subscription
 	./docker-run-test/run-subscription-bench-docker.sh "config.mssql.subscription.yaml"
 
 setup_containers: ## Sets up Hasura, Postgres and SQL Server Docker containers
-	cd containers && docker-compose up -d --force-recreate
+	cd containers && docker-compose up -d --force-recreate && ./graphql-wait.sh
 
 seed_chinook_database: ## Creates Chinook database schema & seed data in Hasura for testing
 	./containers/psql-seed-chinook.sh
@@ -31,13 +31,14 @@ setup_events_table: ## Sets up events table for subscriptions
 	./containers/psql-setup-events-table.sh
 
 run_update_rows: ## Updates rows to trigger data events
-	./containers/psql-update-rows.sh
+	./containers/update-rows.sh psql
 
 run_update_rows_mssql: ## Updates rows to trigger data events
-	./containers/mssql-update-rows.sh
+	./containers/update-rows.sh mssql
 
 start_container_report: ## Starts cadvisor for Docker container stats reporting
 	./reports/start-cadvisor
+
 cleanup:
 	cd containers && docker-compose stop && docker-compose rm && docker rm -f containers_graphql_bench_subs_1
 
@@ -73,6 +74,13 @@ install_k6: ## Handles installing k6 either Mac or Debian-based Linux (for local
 
 setup_all: ## Sets up containers and then creates Chinook database
 	setup_containers setup_events_table
+
+# Subscriptions / Postgres
+setup_psql: setup_containers setup_events_table seed_chinook_database build_local_docker_image
+run_benchmark_psql: run_docker_subscription_bench run_update_rows
+benchmark_psql: setup_psql run_benchmark_psql cleanup
+
+# Subscriptions / SQL Server
 setup_mssql: setup_containers setup_events_table seed_chinook_database_mssql build_local_docker_image
 run_benchmark_mssql: run_docker_subscription_bench_mssql run_update_rows_mssql
 benchmark_mssql: setup_mssql run_benchmark_mssql cleanup
