@@ -151,6 +151,7 @@ export interface BenchmarkMetrics {
   histogram: {
     json: HistogramSummaryWithMeanAndStdDev
     text: string
+    base64Encoded: string
     parsedStats: HDRHistogramParsedStats[]
   }
 }

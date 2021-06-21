@@ -26,6 +26,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import execa from 'execa'
 import { lookpath } from 'lookpath'
+import { encodeIntoCompressedBase64 } from 'hdr-histogram-js'
 
 export class Wrk2Executor extends BenchmarkExecutor {
   public tool = BenchmarkTool.WRK2
@@ -53,6 +54,7 @@ export class Wrk2Executor extends BenchmarkExecutor {
       },
       histogram: {
         text: hdrHistogramStdout,
+        base64Encoded: encodeIntoCompressedBase64(reconstructHdrHistogramFromText(hdrHistogramStdout)),
         parsedStats: parseHdrHistogramText(hdrHistogramStdout),
         json: {
           totalCount: stats.requests,
@@ -215,3 +217,7 @@ export class Wrk2Executor extends BenchmarkExecutor {
     return metrics
   }
 }
+function reconstructHdrHistogramFromText(hdrHistogramStdout: string): import("hdr-histogram-js/dist/Histogram").default {
+  throw new Error('Function not implemented.')
+}
+

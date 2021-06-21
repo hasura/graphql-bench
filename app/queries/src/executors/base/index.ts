@@ -1,6 +1,7 @@
 import fs from 'fs-extra'
 import path from 'path'
 import yaml from 'js-yaml'
+import hdr from 'hdr-histogram-js'
 
 import {
   HDRHistogramParsedStats,
@@ -45,6 +46,7 @@ export function makeBenchmarkMetrics(
         stdDeviation: histogram.stdDeviation,
       },
       text: histogram.outputPercentileDistribution(),
+      base64Encoded: hdr.encodeIntoBase64String(histogram),
       parsedStats: parseHdrHistogramText(
         histogram.outputPercentileDistribution()
       ),
