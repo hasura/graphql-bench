@@ -52,7 +52,6 @@ export class Wrk2Executor extends BenchmarkExecutor {
         end: end.toISOString(),
       },
       histogram: {
-        text: hdrHistogramStdout,
         parsedStats: parseHdrHistogramText(hdrHistogramStdout),
         json: {
           totalCount: stats.requests,

@@ -45,10 +45,7 @@ export function makeBenchmarkMetrics(
         mean: histogram.mean,
         stdDeviation: histogram.stdDeviation,
       },
-      text: histogram.outputPercentileDistribution(),
-      parsedStats: parseHdrHistogramText(
-        histogram.outputPercentileDistribution()
-      ),
+      parsedStats: histogram.parsedStats,
     },
   }
 }

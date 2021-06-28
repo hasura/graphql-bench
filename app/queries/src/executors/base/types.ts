@@ -2,6 +2,7 @@ import type * as stream from 'stream'
 
 import type Histogram from 'hdr-histogram-js/src/Histogram'
 import type { HistogramSummary } from 'hdr-histogram-js/src/Histogram'
+import * as precise_hdr from '../../PreciseHdrHistogram'
 
 import type { K6Options } from '../k6/types'
 import type { Stage as K6Stage } from 'k6/options'
@@ -122,6 +123,7 @@ export type Benchmark =
  * ========================
  */
 
+// see 'parseHdrHistogramText()'
 export interface HDRHistogramParsedStats {
   value: string
   percentile: string
@@ -150,14 +152,13 @@ export interface BenchmarkMetrics {
   }
   histogram: {
     json: HistogramSummaryWithMeanAndStdDev
-    text: string
     parsedStats: HDRHistogramParsedStats[]
   }
 }
 
 export interface BenchmarkMetricParams {
   name: string
-  histogram: Histogram
+  histogram: precise_hdr.PreciseHdrHistogram
   time: {
     start: Date | string
     end: Date | string
