@@ -131,8 +131,9 @@ export interface HDRHistogramParsedStats {
   ofOnePercentile: string
 }
 
-export interface HistogramSummaryWithMeanAndStdDev extends HistogramSummary {
+export interface HistogramSummaryWithMeanMinAndStdDev extends HistogramSummary {
   mean: number
+  min: number
   stdDeviation: number
 }
 
@@ -151,7 +152,7 @@ export interface BenchmarkMetrics {
     bytesPerSecond: number
   }
   histogram: {
-    json: HistogramSummaryWithMeanAndStdDev
+    json: HistogramSummaryWithMeanMinAndStdDev
     parsedStats: HDRHistogramParsedStats[]
   }
 }

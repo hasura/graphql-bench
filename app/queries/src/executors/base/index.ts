@@ -43,6 +43,7 @@ export function makeBenchmarkMetrics(
       json: {
         ...histogram.toJSON(),
         mean: histogram.mean,
+        min: histogram.min,
         stdDeviation: histogram.stdDeviation,
       },
       parsedStats: histogram.parsedStats,

@@ -43,6 +43,10 @@ export class PreciseHdrHistogram {
   get mean(): number {
     return (this._histogramDirty.mean / PreciseHdrHistogram.scalingFactor)
   }
+  get min(): number {
+    // NOTE: 'minNonZeroValue' is already just 'min' since 0 can't be recorded
+    return (this._histogramDirty.minNonZeroValue / PreciseHdrHistogram.scalingFactor)
+  }
   get stdDeviation(): number {
     return (this._histogramDirty.stdDeviation / PreciseHdrHistogram.scalingFactor)
   }
