@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import readline from 'readline'
 
-import * as hdr from 'hdr-histogram-js'
+import * as hdr from './PreciseHdrHistogram'
 
 async function* parseNDJSON(filepath: string) {
   const filestream = fs.createReadStream(filepath)

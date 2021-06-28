@@ -21,7 +21,8 @@ export function parseHdrHistogramText(text: string): HDRHistogramParsedStats[] {
   const lines = text.split('\n')
   for (let line of lines) {
     let entries = line.trim().split(/\s+/)
-    let valid = entries.length == 4 && entries.every(Number)
+    // Careful of truthiness when parsing zero here:
+    let valid = entries.length == 4 && entries.every((x) => !(isNaN(Number(x))))
     if (!valid) continue
     let [value, percentile, totalCount, ofOnePercentile] = entries
     results.push({ value, percentile, totalCount, ofOnePercentile })
@@ -42,12 +43,10 @@ export function makeBenchmarkMetrics(
       json: {
         ...histogram.toJSON(),
         mean: histogram.mean,
+        min: histogram.min,
         stdDeviation: histogram.stdDeviation,
       },
-      text: histogram.outputPercentileDistribution(),
-      parsedStats: parseHdrHistogramText(
-        histogram.outputPercentileDistribution()
-      ),
+      parsedStats: histogram.parsedStats,
     },
   }
 }

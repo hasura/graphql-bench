@@ -37,6 +37,11 @@ export default class Query extends Command {
       multiple: false,
       description: 'URL to direct graphql queries; may override \'url\' from the YAML config, which is optional if this flag is passed',
     }),
+    query: flags.string({
+      required: false,
+      multiple: false,
+      description: 'A specific named query to run from the config; if omitted, all queries will be run',
+    }),
   }
 
   async run() {
@@ -49,7 +54,7 @@ export default class Query extends Command {
       config.url = flags.url
     }
     const executor = new BenchmarkRunner(config)
-    const results = await executor.runBenchmarks()
+    const results = await executor.runBenchmarks(flags.query)
 
     if (flags.outfile) {
       const pathToOutfile = path.join(process.cwd(), flags.outfile)

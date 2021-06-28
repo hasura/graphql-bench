@@ -24,7 +24,7 @@ import { Options as AutocannonOptions } from 'autocannon'
 
 import fs from 'fs-extra'
 import path from 'path'
-import * as hdr from 'hdr-histogram-js'
+import * as hdr from '../../PreciseHdrHistogram'
 
 export class AutocannonExecutor extends BenchmarkExecutor {
   public tool = BenchmarkTool.AUTOCANNON

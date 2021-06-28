@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as cp from 'child_process'
-import * as hdr from 'hdr-histogram-js'
+import * as hdr from '../../PreciseHdrHistogram'
 import readline from 'readline'
 
 import {

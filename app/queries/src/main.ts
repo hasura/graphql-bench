@@ -11,10 +11,13 @@ import {
 export class BenchmarkRunner {
   constructor(public config: GlobalConfig) {}
 
-  public async runBenchmarks() {
+  public async runBenchmarks(only_query?: string) {
     let results: BenchmarkMetrics[] = []
 
     for (let query of this.config.queries) {
+      // Maybe run just a single requested benchmark from the config:
+      if (only_query && query.name != only_query) continue
+
       for (let tool of query.tools) {
         switch (tool) {
           case BenchmarkTool.AUTOCANNON: {

@@ -52,12 +52,12 @@ export class Wrk2Executor extends BenchmarkExecutor {
         end: end.toISOString(),
       },
       histogram: {
-        text: hdrHistogramStdout,
         parsedStats: parseHdrHistogramText(hdrHistogramStdout),
         json: {
           totalCount: stats.requests,
           max: stats.latency_aggregate.max,
           mean: stats.latency_aggregate.mean,
+          min: stats.latency_aggregate.min,
           stdDeviation: stats.latency_aggregate.stdev,
           p50: findPercentile(stats, 50).latency_in_milliseconds,
           p75: findPercentile(stats, 75).latency_in_milliseconds,
