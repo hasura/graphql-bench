@@ -29,6 +29,8 @@ export type ExecutionStrategy =
  */
 export interface GlobalConfig {
   url: string
+  /** When true assume the target is a hasura instance and run some additional checks */
+  extended_hasura_checks?: boolean
   headers?: Record<string, any>
   queries: Benchmark[]
   /** When true, will log all HTTP responses */
@@ -154,6 +156,16 @@ export interface BenchmarkMetrics {
   histogram: {
     json: HistogramSummaryWithMeanMinAndStdDev
     parsedStats: HDRHistogramParsedStats[]
+  }
+  // These are available when 'extended_hasura_checks: true' in the config yaml:
+  extended_hasura_checks?: {
+    bytes_allocated_per_request: number
+    // memory residency stats, both before and after the benchmark runs:
+    //   see: https://hackage.haskell.org/package/base-4.15.0.0/docs/GHC-Stats.html
+    live_bytes_before: number
+    live_bytes_after: number
+    mem_in_use_bytes_before: number
+    mem_in_use_bytes_after: number
   }
 }
 
