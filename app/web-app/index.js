@@ -95,6 +95,19 @@ const Main = {
   setup() {
     let benchData = ref([])
 
+    // We optionally take a comma-separated list of json report URLs to plot in
+    // the URL fragment, and bypass asking for a local file. The remote must
+    // have CORS configured properly.
+    // TODO when more than one URL, show regression-style report
+    // NOTE: comma is techniquely valid in URL so using comma as the separator
+    //       is not robust, but this seems unlikely to happen in practice
+    if (window.location.hash){
+      var urls = window.location.hash.substring(1).split(',')
+      fetch(urls[0], {mode:'cors'})
+        .then(response => response.json())
+        .then(data => benchData.value = data)
+    }
+
     const handleFileUpload = async (event) => {
       const file = event.target.files[0]
       const content = await file.text()
