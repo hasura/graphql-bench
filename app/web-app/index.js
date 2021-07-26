@@ -25,10 +25,13 @@ const getColor = () => {
   return colorList[num]
 }
 
+// For the Latency Percentiles Graph:
+const hist_points = ['min', 'p50', 'p75', 'p90', 'p99', 'p99_9', 'max']
+const hist_labels = ['min',  '50%', '75%', '90%', '99%', '99.9%','max']
+
 const makeChartJSDataset = (benchDataEntry) => {
   const label = benchDataEntry.name
-  const points = ['p50', 'p75', 'p90', 'p99', 'p99_9', 'p99_99']
-  const data = points.map((p) => benchDataEntry.histogram.json[p])
+  const data = hist_points.map((p) => benchDataEntry.histogram.json[p])
   return {
     label,
     data,
@@ -601,7 +604,7 @@ app.component('LatencyLineChart', {
         maintainAspectRatio: false,
         type: 'line',
         data: {
-          labels: ['50%', '75%', '90%', '99%', '99.9%', '99.99%'],
+          labels: hist_labels,
           datasets: props.benchData.map(makeChartJSDataset),
         },
         options: {
