@@ -78,6 +78,7 @@ const Main = {
         </label>
       </section>
 
+      <!-- Visualize a single benchmark set: -->
       <section v-else>
         <h1 class="py-4 mb-10 text-3xl border-b">
           Latency
@@ -88,7 +89,10 @@ const Main = {
         </h1>
         <div class="flex flex-row m-5">
           <AggregateScatterPlot title="Response Time Scatterplot" :bench-data="benchData" :height="350" :width="700" />
-          <AggregateBarChart title="Comparison" :bench-data="benchData" :height="350" :width="700" />
+          <MeanBarChart title="Mean Latencies" :bench-data="benchData" :height="350" :width="300" />
+        </div>
+        <div class="flex flex-row m-5" v-if="benchData.length != 0 && benchData[0].extended_hasura_checks">
+          <MemoryStats title="Memory and Allocation Stats (bytes)" :bench-data="benchData" :height="350" />
         </div>
         <DataTable :bench-data="benchData" />
       </section>
@@ -703,7 +707,7 @@ app.component('LatencyLineChart', {
   },
 })
 
-app.component('AggregateBarChart', {
+app.component('MeanBarChart', {
   props: {
     benchData: Array,
     title: String,
@@ -712,21 +716,18 @@ app.component('AggregateBarChart', {
   },
   setup(props) {
     const aggregateData = props.benchData.flatMap((it) => {
-      let metrics = ['mean', 'max', 'stdDeviation']
-      return metrics.map((metric) => {
-        return {
-          metric,
-          name: it.name,
-          value: Number(it.histogram.json[metric].toFixed(2)),
-        }
-      })
+      return {
+        metric: "mean",
+        name: it.name,
+        value: Number(it.histogram.json["mean"].toFixed(2)),
+      }
     })
 
     onMounted(() => {
       MG.data_graphic({
         title: props.title,
         data: aggregateData,
-        description: 'Comparison of Latency Mean, Max, and Standard Deviation',
+        description: 'Mean latency, for each benchmark in this set',
         chart_type: 'bar',
         y_accessor: 'value',
         x_accessor: 'name',
@@ -752,7 +753,7 @@ app.component('AggregateBarChart', {
     </component>
     <div 
       id="aggregate-bar-chart"
-      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-3/5 h-128">
+      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-2/5 h-128">
     </div>
   `,
 })
@@ -805,6 +806,56 @@ app.component('AggregateScatterPlot', {
     <div 
       id="aggregate-scatterplot-chart"
       class="bg-gray-200 rounded-md shadow-lg p-2 mx-5 w-2/5 h-128">
+    </div>
+  `,
+})
+
+// This graph is only displayed when extended_hasura_checks results are present
+app.component('MemoryStats', {
+  props: {
+    benchData: Array,
+    title: String,
+    height: Number,
+    width: Number,
+  },
+  setup(props) {
+    const aggregateData = props.benchData.flatMap((it) => {
+      let metrics = ['bytes_allocated_per_request', 'live_bytes_before', 'live_bytes_after', 'mem_in_use_bytes_before', 'mem_in_use_bytes_after']
+      return metrics.map((metric) => {
+        return {
+          metric: metric.replaceAll("bytes_","").replaceAll("_", " "),
+          name: it.name,
+          value: Number(it.extended_hasura_checks[metric].toFixed(2)),
+        }
+      })
+    })
+
+    onMounted(() => {
+      MG.data_graphic({
+        title: props.title,
+        data: aggregateData,
+        description: 'Memory and allocation stats, for each benchmark in this set',
+        chart_type: 'bar',
+        y_accessor: 'value',
+        x_accessor: 'name',
+        xgroup_accessor: 'metric',
+        full_width: true,
+        full_height: true,
+        buffer: 40,
+        size_accessor: 'size',
+        target: '#memory-stats',
+      })
+    })
+  },
+  template: /* html */ `
+    <component is="style">
+      .h-128 {
+        height: 32rem;
+      }
+    </component>
+    <div 
+      id="memory-stats"
+      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-4/5 h-128">
     </div>
   `,
 })
