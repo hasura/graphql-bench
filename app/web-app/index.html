@@ -12,6 +12,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-colorschemes"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-crosshair@1.1.6"></script>
+    <!-- Dependencies for Zoom plugin: -->
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7"></script>
+    <script type="module">
+      // see https://www.skypack.dev/view/color-interpolate for README
+      import colorInterpolate from "https://cdn.skypack.dev/color-interpolate"
+      // expose in index.js
+      window.colorInterpolate = colorInterpolate
+    </script>
     <!-- MetricsGraphics required for scatterplot and grouped bar-charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/metrics-graphics/3.0-alpha3/metricsgraphics.js"></script>
 
@@ -27,7 +36,8 @@
 
   <body class="font-sans leading-normal tracking-normal bg-gray-400">
     <div id="app"></div>
-    <script src="./index.js"></script>
+    <!-- NOTE: we need this to load after the type="module" import above, which has an implicit defer, hence the defer here -->
+    <script src="./index.js" defer></script>
   </body>
 
   <style>

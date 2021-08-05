@@ -25,10 +25,13 @@ const getColor = () => {
   return colorList[num]
 }
 
+// For the Latency Percentiles Graph:
+const hist_points = ['min', 'p50', 'p75', 'p90', 'p99', 'p99_9', 'max']
+const hist_labels = ['min',  '50%', '75%', '90%', '99%', '99.9%','max']
+
 const makeChartJSDataset = (benchDataEntry) => {
   const label = benchDataEntry.name
-  const points = ['p50', 'p75', 'p90', 'p99', 'p99_9', 'p99_99']
-  const data = points.map((p) => benchDataEntry.histogram.json[p])
+  const data = hist_points.map((p) => benchDataEntry.histogram.json[p])
   return {
     label,
     data,
@@ -55,6 +58,53 @@ const benchmarkEntryToTableValue = (item) => {
   }
 }
 
+const hasuraBenchmarksURL = `https://hasura-benchmark-results.s3.us-east-2.amazonaws.com`
+
+// async fetch all URLs in the list
+const fetchAllJSON = (urlsIds) => {
+  // Turn any shorthand identifiers like 'mono-pr-1866/chinook' into full URLs
+  // pointing to our report S3 bucket
+  const urls = urlsIds.map( (u) => {
+    if (u.startsWith("mono-pr-")) {
+      return `${hasuraBenchmarksURL}/${u}.json`
+    } else if (u.startsWith("http")) {
+      return u
+    } else {
+      throw `Identifiers in the URL hash need to be either a full URL, or like 'mono-pr-1234/chinook', not ${u}`
+    }
+
+  })
+  return Promise.all( urls.map( (url) => 
+    fetch(url, {mode:'cors'})
+      .then(response => response.json())
+  ))
+}
+
+// twiddle and filter data, and combine multiple reports into a single multiBenchData:
+const prepareMultiBenchData = (jsons, names) => {
+  const jsonsByName = jsons.map( (report, ix) => {
+    let benchmarksObj = {}
+    report.forEach( (b) => benchmarksObj[b.name] = {
+      ...b.histogram.json,
+      ...b.extended_hasura_checks,
+      // assume reports here are in the same order:
+      name: names[ix],
+    })
+    return benchmarksObj
+  })
+  // transpose the reports, so we get one array item per benchmark
+  let multiData = {}
+  jsonsByName.forEach( (report) =>  {
+    for (const [benchName, benchData] of Object.entries(report)) {
+      if (!(benchName in multiData)) {
+        multiData[benchName] = []
+      }
+      multiData[benchName].push(benchData)
+    }
+  })
+  return multiData
+}
+
 const Main = {
   template: /* html */ `
     <div>
@@ -64,18 +114,19 @@ const Main = {
       <!-- <MainContent /> -->
       <div id="main-content" class="container m-auto">
 
-      <section v-if="benchData.length == 0">
+      <section v-if="benchData.length == 0 && Object.keys(multiBenchData).length === 0">
         <!-- File upload -->
         <label style="margin: auto;" class="w-64 flex flex-col items-center px-4 py-6 bg-white text-blue-400 rounded-lg shadow-lg tracking-wide uppercase border border-blue-400 cursor-pointer hover:bg-blue-400  hover:text-white">
           <svg class="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
               <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
           </svg>
-          <span class="mt-2 text-base leading-normal">Select a file</span>
-          <input type='file' class="hidden" @change="handleFileUpload" />
+          <span class="mt-2 text-base leading-normal">Select one or more JSON reports</span>
+          <input type='file' class="hidden" @change="handleFileUpload" multiple/>
         </label>
       </section>
 
-      <section v-else>
+      <!-- Visualize a single benchmark set: -->
+      <section v-if="benchData && benchData.length > 0">
         <h1 class="py-4 mb-10 text-3xl border-b">
           Latency
         </h1>
@@ -85,36 +136,101 @@ const Main = {
         </h1>
         <div class="flex flex-row m-5">
           <AggregateScatterPlot title="Response Time Scatterplot" :bench-data="benchData" :height="350" :width="700" />
-          <AggregateBarChart title="Comparison" :bench-data="benchData" :height="350" :width="700" />
+          <MeanBarChart title="Mean Latencies" :bench-data="benchData" :height="350" :width="300" />
+        </div>
+        <div class="flex flex-row m-5" v-if="benchData && benchData.length > 0 && benchData[0].extended_hasura_checks">
+          <MemoryStats title="Memory and Allocation Stats (bytes)" :bench-data="benchData" :height="350" />
         </div>
         <DataTable :bench-data="benchData" />
+      </section>
+
+      <!-- Visualize several benchmark reports, showing regressions -->
+      <section v-if="multiBenchData && Object.keys(multiBenchData).length !== 0">
+        <h1 class="py-4 mb-10 text-3xl border-b">
+          Latency Percentiles Across Reports, For Each Benchmark
+        </h1>
+        <span class="py-4 mb-10 text-1xl">
+          <strong>NOTE</strong>: If the benchmark runs we're visualizing were passed in the URL
+          hash in e.g. reverse chronological order then they will be colored
+          here in that order, with most recent runs dark red fading into light
+          blue, and then dark blue for the oldest report. The charts below can
+          be <strong>zoomed</strong> with the mouse wheel.
+        </span>
+        
+        <div v-for="(benchData, benchName) in multiBenchData" style="padding: 10px">
+          <MultiLatencyLineChart :bench-data="benchData" :bench-name="benchName"/>
+        </div>
+
+        <h1 class="py-4 mb-10 text-3xl border-b">
+          Memory Usage and Allocation Metrics
+        </h1>
+        <div v-for="(benchData, benchName) in multiBenchData" style="padding: 10px">
+          <h2 class="py-4 mb-10 text-2xl border-b">
+            {{benchName.replace('-k6-custom','')}}
+          </h2>
+          <!-- Skip if this report doesn't have extended_hasura_checks -->
+          <div class="flex" v-if="('bytes_allocated_per_request' in benchData[0])">
+            <MemoryMultiBarChart :bench-data="benchData" :title="'Bytes allocated per request'" :metric="'bytes_allocated_per_request'" />
+            <MemoryMultiBarChart :bench-data="benchData" :title="'\\'mem_in_use\\', after bench run'" :metric="'mem_in_use_bytes_after'" />
+            <MemoryMultiBarChart :bench-data="benchData" :title="'\\'live_bytes\\', after bench run'" :metric="'live_bytes_after'" />
+          </div>
+        </div>
       </section>
       </div>
     </div>
   `,
   setup() {
-    let benchData = ref([])
+    // Data from a single JSON report.
+    //
+    // (Set this to false briefly to hide the file picker while we potentially
+    // fetch json asynchronously):
+    let benchData = ref(false)
+    
+    // Data aggregated from two or more JSON reports, which we'll present as a
+    // regression report
+    let multiBenchData = ref({})
+    // NOTE: we only ever have EITHER `benchData` OR `multiBenchData` defined.
+    //       Morally it's an enum/sum type.
 
     // We optionally take a comma-separated list of json report URLs to plot in
     // the URL fragment, and bypass asking for a local file. The remote must
     // have CORS configured properly.
-    // TODO when more than one URL, show regression-style report
     // NOTE: comma is techniquely valid in URL so using comma as the separator
     //       is not robust, but this seems unlikely to happen in practice
     if (window.location.hash){
-      var urls = window.location.hash.substring(1).split(',')
-      fetch(urls[0], {mode:'cors'})
-        .then(response => response.json())
-        .then(data => benchData.value = data)
+      var urlsIds = window.location.hash.substring(1).split(',')
+      fetchAllJSON(urlsIds)
+        .then(jsons => {
+          // We're generating single run report:
+          if (jsons.length == 1) {
+            benchData.value = jsons[0]
+
+          // We're generating a regression report from multiBenchData:
+          } else {
+            multiBenchData.value = prepareMultiBenchData(jsons, urlsIds)
+          }
+        })
+    } else {
+      // Report data will come from file-picker
+      benchData.value = []
     }
 
     const handleFileUpload = async (event) => {
-      const file = event.target.files[0]
-      const content = await file.text()
-      benchData.value = JSON.parse(content)
+      // We're generating a regression report from multiBenchData:
+      if (event.target.files.length > 1) {
+        let files = Array.from(event.target.files)
+        const filesText = await Promise.all(files.map((f) => f.text()))
+        const filesJson = filesText.map(JSON.parse)
+        multiBenchData.value = prepareMultiBenchData(filesJson, files.map((f) => f.name))
+      // We're generating single run report:
+      } else {
+        const file = event.target.files[0]
+        const content = await file.text()
+        benchData.value = JSON.parse(content)
+      }
     }
 
-    return { benchData, handleFileUpload }
+    return { benchData, handleFileUpload, multiBenchData }
   },
 }
 
@@ -572,6 +688,97 @@ app.component('DataTable', {
   },
 })
 
+// Options for our hdr-histogram-style line chart, factored out for re-use:
+const makeLatencyLineChartOptions = (otherPlugins) => {
+  return {
+    tooltips: {
+      mode: 'interpolate',
+      intersect: false,
+    },
+    hover: {
+      intersect: false,
+    },
+    plugins: {
+      ...otherPlugins,
+      crosshair: {
+        line: {
+          color: 'black', // crosshair line color
+          width: 0.75, // crosshair line width
+          //dashPattern: [15, 3, 3, 3], // crosshair line dash pattern
+        },
+        sync: {
+          enabled: true, // enable trace line syncing with other charts
+          group: 1, // chart group
+          suppressTooltips: false, // suppress tooltips when showing a synced tracer
+        },
+        snap: {
+          enabled: true,
+        },
+        zoom: {
+          enabled: true, // enable zooming
+          zoomboxBackgroundColor: 'rgba(66,133,244,0.2)', // background color of zoom box
+          zoomboxBorderColor: '#48F', // border color of zoom box
+          zoomButtonText: 'Reset Zoom', // reset zoom button text
+          zoomButtonClass: 'reset-zoom', // reset zoom button class
+        },
+        callbacks: {
+          beforeZoom: function (start, end) {
+            // called before zoom, return false to prevent zoom
+            return true
+          },
+          afterZoom: function (start, end) {
+            // called after zoom
+          },
+        },
+      },
+    },
+    scales: {
+      xAxes: [
+        {
+          scaleLabel: {
+            display: true,
+            labelString: 'Latency Percentile',
+          },
+          gridLines: {
+            display: true,
+            zeroLineColor: 'black',
+            tickMarkLength: 3,
+          },
+          ticks: {
+            padding: 5,
+            fontSize: 12,
+            fontStyle: 'bold',
+          },
+        },
+      ],
+      yAxes: [
+        {
+          type: 'logarithmic',
+          position: 'left',
+          gridLines: {
+            display: true,
+            lineWidth: 1,
+            tickMarkLength: 1,
+          },
+          scaleLabel: {
+            display: true,
+            labelString: 'Response Time (ms)',
+          },
+          ticks: {
+            maxTicksLimit: 10,
+            padding: 5,
+            fontSize: 12,
+            fontStyle: 'bold',
+            callback: (value, index, allValues) => {
+              return value
+            },
+          },
+        },
+      ],
+    },
+  }
+}
+
 app.component('LatencyLineChart', {
   props: {
     benchData: Array,
@@ -601,98 +808,10 @@ app.component('LatencyLineChart', {
         maintainAspectRatio: false,
         type: 'line',
         data: {
-          labels: ['50%', '75%', '90%', '99%', '99.9%', '99.99%'],
+          labels: hist_labels,
           datasets: props.benchData.map(makeChartJSDataset),
         },
-        options: {
-          tooltips: {
-            mode: 'interpolate',
-            intersect: false,
-          },
-          hover: {
-            intersect: false,
-          },
-          plugins: {
-            // colorschemes: {
-            //   scheme: "brewer.SetOne8"
-            // },
-            crosshair: {
-              line: {
-                color: 'black', // crosshair line color
-                width: 0.75, // crosshair line width
-                //dashPattern: [15, 3, 3, 3], // crosshair line dash pattern
-              },
-              sync: {
-                enabled: true, // enable trace line syncing with other charts
-                group: 1, // chart group
-                suppressTooltips: false, // suppress tooltips when showing a synced tracer
-              },
-              snap: {
-                enabled: true,
-              },
-              zoom: {
-                enabled: true, // enable zooming
-                zoomboxBackgroundColor: 'rgba(66,133,244,0.2)', // background color of zoom box
-                zoomboxBorderColor: '#48F', // border color of zoom box
-                zoomButtonText: 'Reset Zoom', // reset zoom button text
-                zoomButtonClass: 'reset-zoom', // reset zoom button class
-              },
-              callbacks: {
-                beforeZoom: function (start, end) {
-                  // called before zoom, return false to prevent zoom
-                  return true
-                },
-                afterZoom: function (start, end) {
-                  // called after zoom
-                },
-              },
-            },
-          },
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  display: true,
-                  labelString: 'Latency Percentile',
-                },
-                gridLines: {
-                  display: true,
-                  zeroLineColor: 'black',
-                  tickMarkLength: 3,
-                },
-                ticks: {
-                  padding: 5,
-                  fontSize: 12,
-                  fontStyle: 'bold',
-                },
-              },
-            ],
-            yAxes: [
-              {
-                type: 'logarithmic',
-                position: 'left',
-                gridLines: {
-                  display: true,
-                  lineWidth: 1,
-                  tickMarkLength: 1,
-                },
-                scaleLabel: {
-                  display: true,
-                  labelString: 'Response Time (ms)',
-                },
-                ticks: {
-                  maxTicksLimit: 10,
-                  padding: 5,
-                  fontSize: 12,
-                  fontStyle: 'bold',
-                  callback: (value, index, allValues) => {
-                    return value
-                  },
-                },
-              },
-            ],
-          },
-        },
+        options: makeLatencyLineChartOptions({}),
       })
     })
 
@@ -700,7 +819,79 @@ app.component('LatencyLineChart', {
   },
 })
 
-app.component('AggregateBarChart', {
+// A line chart like LatencyLineChart, but comparing the same benchmark across
+// different runs, when in multiBenchData mode:
+app.component('MultiLatencyLineChart', {
+  props: {
+    benchData: Array,
+    benchName: String,
+  },
+  template: /* html */ `
+      <div
+      class="bg-gray-200 rounded-lg shadow-xl"
+      style="
+        position: relative;
+        width: 800px;
+        height: 500px;
+        padding: 50px 20px;
+        margin: auto;
+      "
+    >
+      <h1>{{benchName.replace("-k6-custom","").replaceAll("_"," ")}}</h1>
+      <hr />
+      <canvas id="chart-container" ref="chartElem"></canvas>
+    </div>
+  `,
+  setup(props) {
+    const chartElem = ref(null)
+    onMounted(() => {
+      const makeDataset = (benchDataEntry, ix) => {
+        const label = benchDataEntry.name
+        const data = hist_points.map((p) => benchDataEntry[p])
+        return {
+          label,
+          data,
+          fill: false,
+          borderWidth: 2,
+          pointRadius: 2.5,
+          // This is a heatmap-style red to blue color scheme which lets us show
+          // the results "fading back in time":
+          borderColor: redToBlue(ix, props.benchData.length)
+          // pointBackgroundColor: 'white',
+        }
+      }
+      // Options to allow zooming: https://www.chartjs.org/chartjs-plugin-zoom/ 
+      const zoomOptions = {
+        zoom: {
+          pan: {
+            enabled: true,
+          },
+          zoom: {
+            enabled: true,
+            mode: 'y',
+          }
+        }
+      }
+
+      const ctx = chartElem.value.getContext('2d')
+      const myChart = new Chart(ctx, {
+        responsive: true,
+        maintainAspectRatio: false,
+        type: 'line',
+        data: {
+          labels: hist_labels,
+          datasets: props.benchData.map(makeDataset),
+        },
+        options: makeLatencyLineChartOptions(zoomOptions),
+        // options: makeLatencyLineChartOptions({colorschemes: { scheme: "brewer.RdYlBu11" }}),
+      })
+    })
+
+    return { chartElem }
+  },
+})
+
+app.component('MeanBarChart', {
   props: {
     benchData: Array,
     title: String,
@@ -709,21 +900,18 @@ app.component('AggregateBarChart', {
   },
   setup(props) {
     const aggregateData = props.benchData.flatMap((it) => {
-      let metrics = ['mean', 'max', 'stdDeviation']
-      return metrics.map((metric) => {
-        return {
-          metric,
-          name: it.name,
-          value: Number(it.histogram.json[metric].toFixed(2)),
-        }
-      })
+      return {
+        metric: "mean",
+        name: it.name,
+        value: Number(it.histogram.json["mean"].toFixed(2)),
+      }
     })
 
     onMounted(() => {
       MG.data_graphic({
         title: props.title,
         data: aggregateData,
-        description: 'Comparison of Latency Mean, Max, and Standard Deviation',
+        description: 'Mean latency, for each benchmark in this set',
         chart_type: 'bar',
         y_accessor: 'value',
         x_accessor: 'name',
@@ -749,10 +937,103 @@ app.component('AggregateBarChart', {
     </component>
     <div 
       id="aggregate-bar-chart"
-      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-3/5 h-128">
+      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-2/5 h-128">
     </div>
   `,
 })
+
+// return a color uniformly along a gradient for an element in a list at index
+// `ix`, where the list has length `totalCount`
+const redToBlue = (ix, totalCount) => {
+  // This is a copy of the brewer.RdYlBu11 colorscheme:
+  const redToBlue11Scheme = ["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee090", "#ffffbf", "#e0f3f8", "#abd9e9", "#74add1", "#4575b4", "#313695"]
+  const color = window.colorInterpolate(redToBlue11Scheme)
+  return color(ix/(totalCount-1))
+}
+const redToBlueArray = (totalCount) => {
+  return [...Array(totalCount).keys()].map((ix) => redToBlue(ix, totalCount))
+}
+
+// This one gets used to show the different memory stats as a simple bar chart,
+// when in multiBenchData mode:
+app.component('MemoryMultiBarChart', {
+  props: {
+    benchData: Array,
+    title: String,
+    metric: String,
+  },
+  setup(props) {
+    var data = []
+    var labels = []
+    props.benchData.forEach((it) => {
+      labels.push(it.name)
+      data.push(Number(it[props.metric].toFixed(2)))
+    })
+
+    const chartElem = ref(null)
+    onMounted(() => {
+      const ctx = chartElem.value.getContext('2d')
+      const myChart = new Chart(ctx, {
+        responsive: true,
+        maintainAspectRatio: false,
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: props.title,
+            data,
+            borderColor: [],
+            borderWidth: 2,
+            backgroundColor: redToBlueArray(data.length),
+          }],
+        },
+        options: {
+          maintainAspectRatio: false,
+          responsive: true,
+          scales: {
+            yAxes: [
+              {
+                position: 'left',
+                gridLines: {
+                  display: true,
+                  lineWidth: 1,
+                  tickMarkLength: 1,
+                },
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Memory/Allocation',
+                },
+                ticks: {
+                  beginAtZero: true,
+                  maxTicksLimit: 10,
+                  padding: 5,
+                  fontSize: 12,
+                  fontStyle: 'bold',
+                  callback: (value, index, allValues) => {
+                    // Bytes to megabytes:
+                    return (value/1_000_000).toFixed(1)+" MB"
+                  },
+                },
+              },
+            ],
+          },
+        },
+      })
+    })
+    return { chartElem }
+  },
+  template: /* html */ `
+      <div
+      style="
+        height: 400px;
+      "
+      class="bg-gray-200 rounded-lg shadow-xl flex1 bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-2/5 h-128"
+    >
+      <canvas ref="chartElem"></canvas>
+    </div>
+  `,
+})
+
 
 app.component('AggregateScatterPlot', {
   props: {
@@ -802,6 +1083,56 @@ app.component('AggregateScatterPlot', {
     <div 
       id="aggregate-scatterplot-chart"
       class="bg-gray-200 rounded-md shadow-lg p-2 mx-5 w-2/5 h-128">
+    </div>
+  `,
+})
+
+// This graph is only displayed when extended_hasura_checks results are present
+app.component('MemoryStats', {
+  props: {
+    benchData: Array,
+    title: String,
+    height: Number,
+    width: Number,
+  },
+  setup(props) {
+    const aggregateData = props.benchData.flatMap((it) => {
+      let metrics = ['bytes_allocated_per_request', 'live_bytes_before', 'live_bytes_after', 'mem_in_use_bytes_before', 'mem_in_use_bytes_after']
+      return metrics.map((metric) => {
+        return {
+          metric: metric.replaceAll("bytes_","").replaceAll("_", " "),
+          name: it.name,
+          value: Number(it.extended_hasura_checks[metric].toFixed(2)),
+        }
+      })
+    })
+
+    onMounted(() => {
+      MG.data_graphic({
+        title: props.title,
+        data: aggregateData,
+        description: 'Memory and allocation stats, for each benchmark in this set',
+        chart_type: 'bar',
+        y_accessor: 'value',
+        x_accessor: 'name',
+        xgroup_accessor: 'metric',
+        full_width: true,
+        full_height: true,
+        buffer: 40,
+        size_accessor: 'size',
+        target: '#memory-stats',
+      })
+    })
+  },
+  template: /* html */ `
+    <component is="style">
+      .h-128 {
+        height: 32rem;
+      }
+    </component>
+    <div 
+      id="memory-stats"
+      class="bg-gray-200 rounded-md shadow-lg p-4 mx-5 w-4/5 h-128">
     </div>
   `,
 })
