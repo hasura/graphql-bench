@@ -832,16 +832,17 @@ app.component('MultiLatencyLineChart', {
       style="
         position: relative;
         width: 800px;
-        height: 500px;
         padding: 50px 20px;
         margin: auto;
       "
     >
       <h1>{{benchName.replace("-k6-custom","").replaceAll("_"," ")}}</h1>
       <hr />
-      <canvas id="chart-container" ref="chartElem"></canvas>
+      <canvas height="250" ref="chartElem"></canvas>
     </div>
   `,
+  // ^^^ NOTE: before changing height styling above, make sure it looks good
+  //           with a chart of at least 50 runs
   setup(props) {
     const chartElem = ref(null)
     onMounted(() => {
@@ -852,8 +853,8 @@ app.component('MultiLatencyLineChart', {
           label,
           data,
           fill: false,
-          borderWidth: 2,
-          pointRadius: 2.5,
+          borderWidth: 1.5,
+          pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
           borderColor: redToBlue(ix, props.benchData.length)
