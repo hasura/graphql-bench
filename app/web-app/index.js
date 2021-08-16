@@ -689,7 +689,7 @@ app.component('DataTable', {
 })
 
 // Options for our hdr-histogram-style line chart, factored out for re-use:
-const makeLatencyLineChartOptions = (otherPlugins) => {
+const makeLatencyLineChartOptions = (otherPlugins, enable_crosshair_zoom = true) => {
   return {
     tooltips: {
       mode: 'interpolate',
@@ -715,7 +715,7 @@ const makeLatencyLineChartOptions = (otherPlugins) => {
           enabled: true,
         },
         zoom: {
-          enabled: true, // enable zooming
+          enabled: enable_crosshair_zoom, // enable zooming
           zoomboxBackgroundColor: 'rgba(66,133,244,0.2)', // background color of zoom box
           zoomboxBorderColor: '#48F', // border color of zoom box
           zoomButtonText: 'Reset Zoom', // reset zoom button text
@@ -770,7 +770,7 @@ const makeLatencyLineChartOptions = (otherPlugins) => {
             fontSize: 12,
             fontStyle: 'bold',
             callback: (value, index, allValues) => {
-              return value
+              return value.toFixed(1)
             },
           },
         },
@@ -832,16 +832,17 @@ app.component('MultiLatencyLineChart', {
       style="
         position: relative;
         width: 800px;
-        height: 500px;
         padding: 50px 20px;
         margin: auto;
       "
     >
       <h1>{{benchName.replace("-k6-custom","").replaceAll("_"," ")}}</h1>
       <hr />
-      <canvas id="chart-container" ref="chartElem"></canvas>
+      <canvas height="250" ref="chartElem"></canvas>
     </div>
   `,
+  // ^^^ NOTE: before changing height styling above, make sure it looks good
+  //           with a chart of at least 50 runs
   setup(props) {
     const chartElem = ref(null)
     onMounted(() => {
@@ -852,8 +853,8 @@ app.component('MultiLatencyLineChart', {
           label,
           data,
           fill: false,
-          borderWidth: 2,
-          pointRadius: 2.5,
+          borderWidth: 1.5,
+          pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
           borderColor: redToBlue(ix, props.benchData.length)
@@ -882,7 +883,8 @@ app.component('MultiLatencyLineChart', {
           labels: hist_labels,
           datasets: props.benchData.map(makeDataset),
         },
-        options: makeLatencyLineChartOptions(zoomOptions),
+        // NOTE: this isn't really compatible with crosshair.zoom, so we disable that here:
+        options: makeLatencyLineChartOptions(zoomOptions, false),
         // options: makeLatencyLineChartOptions({colorschemes: { scheme: "brewer.RdYlBu11" }}),
       })
     })
