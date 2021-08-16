@@ -689,7 +689,7 @@ app.component('DataTable', {
 })
 
 // Options for our hdr-histogram-style line chart, factored out for re-use:
-const makeLatencyLineChartOptions = (otherPlugins) => {
+const makeLatencyLineChartOptions = (otherPlugins, enable_crosshair_zoom = true) => {
   return {
     tooltips: {
       mode: 'interpolate',
@@ -715,7 +715,7 @@ const makeLatencyLineChartOptions = (otherPlugins) => {
           enabled: true,
         },
         zoom: {
-          enabled: true, // enable zooming
+          enabled: enable_crosshair_zoom, // enable zooming
           zoomboxBackgroundColor: 'rgba(66,133,244,0.2)', // background color of zoom box
           zoomboxBorderColor: '#48F', // border color of zoom box
           zoomButtonText: 'Reset Zoom', // reset zoom button text
@@ -770,7 +770,7 @@ const makeLatencyLineChartOptions = (otherPlugins) => {
             fontSize: 12,
             fontStyle: 'bold',
             callback: (value, index, allValues) => {
-              return value
+              return value.toFixed(1)
             },
           },
         },
@@ -882,7 +882,8 @@ app.component('MultiLatencyLineChart', {
           labels: hist_labels,
           datasets: props.benchData.map(makeDataset),
         },
-        options: makeLatencyLineChartOptions(zoomOptions),
+        // NOTE: this isn't really compatible with crosshair.zoom, so we disable that here:
+        options: makeLatencyLineChartOptions(zoomOptions, false),
         // options: makeLatencyLineChartOptions({colorschemes: { scheme: "brewer.RdYlBu11" }}),
       })
     })
