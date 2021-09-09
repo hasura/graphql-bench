@@ -104,6 +104,10 @@ The Query/Mutation CLI bench expects a YAML config of the following format:
 url: 'http://localhost:8085/v1/graphql'
 headers:
   X-Hasura-Admin-Secret: my-secret
+# "Debug" mode enables request and response logging for Autocannon and K6
+# This lets you see what is happening and confirm proper behavior.
+# This should be disabled for genuine benchmarks, and only used for debugging/visibility.
+debug: false
 queries:
     # Name: Unique name for the query
   - name: SearchAlbumsWithArtist
