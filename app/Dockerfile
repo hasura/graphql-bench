@@ -1,4 +1,4 @@
-FROM node:14-alpine AS base
+FROM node:16-alpine AS base
 # Store ENV vars for where the place the k6 and wrk2 binaries in the custom built container
 ENV k6_binary_path="/usr/bin/k6"
 ENV wrk_binary_path="/usr/bin/wrk"
@@ -19,9 +19,9 @@ RUN apk add --update alpine-sdk libgcc openssl-dev zlib-dev \
 FROM base AS node-builder
 WORKDIR /app
 ENV LUA_PATH="/app/queries/bin/wrk/?.lua;;"
-COPY --from=loadimpact/k6:0.27.0 /usr/bin/k6 ${k6_binary_path}
+COPY --from=loadimpact/k6:0.34.0 /usr/bin/k6 ${k6_binary_path}
 COPY --from=wrk-builder ${wrk_binary_path} ${wrk_binary_path}
 COPY . .
 RUN yarn install
 
-ENTRYPOINT ["./cli/bin/run"]
+ENTRYPOINT ["node", "./cli/bin/run"]
