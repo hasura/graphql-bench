@@ -166,6 +166,7 @@ export interface BenchmarkMetrics {
     live_bytes_after: number
     mem_in_use_bytes_before: number
     mem_in_use_bytes_after: number
+    major_gcs: number
   }
 }
 
