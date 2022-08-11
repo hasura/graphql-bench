@@ -40,6 +40,9 @@ const makeChartJSDataset = (benchDataEntry) => {
     pointRadius: 2.5,
     pointBackgroundColor: 'white',
     borderColor: getColor(),
+    // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
+    cubicInterpolationMode: 'monotone',
+    // tension: 0.4, //... I'm not convinced this actually does anything...
   }
 }
 
@@ -857,8 +860,10 @@ app.component('MultiLatencyLineChart', {
           pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
-          borderColor: redToBlue(ix, props.benchData.length)
+          borderColor: redToBlue(ix, props.benchData.length),
           // pointBackgroundColor: 'white',
+          // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
+          cubicInterpolationMode: 'monotone',
         }
       }
       // Options to allow zooming: https://www.chartjs.org/chartjs-plugin-zoom/ 
