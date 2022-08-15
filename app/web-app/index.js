@@ -29,20 +29,6 @@ const getColor = () => {
 const hist_points = ['min', 'p50', 'p75', 'p90', 'p99', 'p99_9', 'max']
 const hist_labels = ['min',  '50%', '75%', '90%', '99%', '99.9%','max']
 
-const makeChartJSDataset = (benchDataEntry) => {
-  const label = benchDataEntry.name
-  const data = hist_points.map((p) => benchDataEntry.histogram.json[p])
-  return {
-    label,
-    data,
-    fill: false,
-    borderWidth: 1,
-    pointRadius: 2.5,
-    pointBackgroundColor: 'white',
-    borderColor: getColor(),
-  }
-}
-
 const benchmarkEntryToTableValue = (item) => {
   return {
     name: item.name,
@@ -689,7 +675,7 @@ app.component('DataTable', {
 })
 
 // Options for our hdr-histogram-style line chart, factored out for re-use:
-const makeLatencyLineChartOptions = (otherPlugins, enable_crosshair_zoom = true) => {
+const makeLatencyLineChartOptions = (minDataPoint, maxDataPoint, otherPlugins, enable_crosshair_zoom = true) => {
   return {
     tooltips: {
       mode: 'interpolate',
@@ -765,6 +751,8 @@ const makeLatencyLineChartOptions = (otherPlugins, enable_crosshair_zoom = true)
             labelString: 'Response Time (ms)',
           },
           ticks: {
+            min: minDataPoint,
+            max: maxDataPoint,
             maxTicksLimit: 10,
             padding: 5,
             fontSize: 12,
@@ -800,18 +788,42 @@ app.component('LatencyLineChart', {
     </div>
   `,
   setup(props) {
+    // Collect these so we can properly scale our axes as tight as possible to data
+    // (maybe new versions of chart.js make this less painful)
+    var minDataPoint = Number.MAX_SAFE_INTEGER
+    var maxDataPoint = Number.MIN_SAFE_INTEGER
+    const makeDataset = (benchDataEntry) => {
+      minDataPoint = Math.min(minDataPoint, benchDataEntry.histogram.json['min'])
+      maxDataPoint = Math.max(maxDataPoint, benchDataEntry.histogram.json['max'])
+      const label = benchDataEntry.name
+      const data = hist_points.map((p) => benchDataEntry.histogram.json[p])
+      return {
+        label,
+        data,
+        fill: false,
+        borderWidth: 1,
+        pointRadius: 2.5,
+        pointBackgroundColor: 'white',
+        borderColor: getColor(),
+        // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
+        cubicInterpolationMode: 'monotone',
+        // tension: 0.4, //... I'm not convinced this actually does anything...
+      }
+    }
+
     const chartElem = ref(null)
     onMounted(() => {
       const ctx = chartElem.value.getContext('2d')
+      const datasets = props.benchData.map(makeDataset)
       const myChart = new Chart(ctx, {
         responsive: true,
         maintainAspectRatio: false,
         type: 'line',
         data: {
           labels: hist_labels,
-          datasets: props.benchData.map(makeChartJSDataset),
+          datasets,
         },
-        options: makeLatencyLineChartOptions({}),
+        options: makeLatencyLineChartOptions(minDataPoint, maxDataPoint, {}),
       })
     })
 
@@ -846,7 +858,13 @@ app.component('MultiLatencyLineChart', {
   setup(props) {
     const chartElem = ref(null)
     onMounted(() => {
+      // Collect these so we can properly scale our axes as tight as possible to data
+      // (maybe new versions of chart.js make this less painful)
+      var minDataPoint = Number.MAX_SAFE_INTEGER
+      var maxDataPoint = Number.MIN_SAFE_INTEGER
       const makeDataset = (benchDataEntry, ix) => {
+        minDataPoint = Math.min(minDataPoint, benchDataEntry['min'])
+        maxDataPoint = Math.max(maxDataPoint, benchDataEntry['max'])
         const label = benchDataEntry.name
         const data = hist_points.map((p) => benchDataEntry[p])
         return {
@@ -857,8 +875,10 @@ app.component('MultiLatencyLineChart', {
           pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
-          borderColor: redToBlue(ix, props.benchData.length)
+          borderColor: redToBlue(ix, props.benchData.length),
           // pointBackgroundColor: 'white',
+          // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
+          cubicInterpolationMode: 'monotone',
         }
       }
       // Options to allow zooming: https://www.chartjs.org/chartjs-plugin-zoom/ 
@@ -875,16 +895,17 @@ app.component('MultiLatencyLineChart', {
       }
 
       const ctx = chartElem.value.getContext('2d')
+      const datasets = props.benchData.map(makeDataset)
       const myChart = new Chart(ctx, {
         responsive: true,
         maintainAspectRatio: false,
         type: 'line',
         data: {
           labels: hist_labels,
-          datasets: props.benchData.map(makeDataset),
+          datasets,
         },
         // NOTE: this isn't really compatible with crosshair.zoom, so we disable that here:
-        options: makeLatencyLineChartOptions(zoomOptions, false),
+        options: makeLatencyLineChartOptions(minDataPoint, maxDataPoint, zoomOptions, false),
         // options: makeLatencyLineChartOptions({colorschemes: { scheme: "brewer.RdYlBu11" }}),
       })
     })
