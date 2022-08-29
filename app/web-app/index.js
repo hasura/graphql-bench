@@ -796,7 +796,7 @@ app.component('LatencyLineChart', {
       minDataPoint = Math.min(minDataPoint, benchDataEntry.histogram.json['min'])
       maxDataPoint = Math.max(maxDataPoint, benchDataEntry.histogram.json['max'])
       const label = benchDataEntry.name
-      const data = hist_points.map((p) => benchDataEntry.histogram.json[p])
+      const data = hist_points.map((p) => benchDataEntry.histogram.json[p] || null)  // null, for spanGaps
       return {
         label,
         data,
@@ -808,6 +808,7 @@ app.component('LatencyLineChart', {
         // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
         cubicInterpolationMode: 'monotone',
         // tension: 0.4, //... I'm not convinced this actually does anything...
+        spanGaps: true,  // span missing data points, for adhoc results
       }
     }
 
@@ -866,7 +867,7 @@ app.component('MultiLatencyLineChart', {
         minDataPoint = Math.min(minDataPoint, benchDataEntry['min'])
         maxDataPoint = Math.max(maxDataPoint, benchDataEntry['max'])
         const label = benchDataEntry.name
-        const data = hist_points.map((p) => benchDataEntry[p])
+        const data = hist_points.map((p) => benchDataEntry[p] || null) // null, for spanGaps
         return {
           label,
           data,
@@ -879,6 +880,7 @@ app.component('MultiLatencyLineChart', {
           // pointBackgroundColor: 'white',
           // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
           cubicInterpolationMode: 'monotone',
+          spanGaps: true,  // span missing data points, for adhoc results
         }
       }
       // Options to allow zooming: https://www.chartjs.org/chartjs-plugin-zoom/ 
