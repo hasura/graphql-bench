@@ -1,3 +1,9 @@
+// Reload when user edits fragment to select different benchmark results:
+function locationHashChanged() {
+  window.location.reload(); 
+}
+window.onhashchange = locationHashChanged;
+
 // @ts-nocheck
 const { ref, reactive, computed, watch, watchEffect, onMounted } = Vue
 
