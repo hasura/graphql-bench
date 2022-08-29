@@ -683,15 +683,15 @@ app.component('DataTable', {
 // Options for our hdr-histogram-style line chart, factored out for re-use:
 const makeLatencyLineChartOptions = (minDataPoint, maxDataPoint, otherPlugins, enable_crosshair_zoom = true) => {
   return {
-    tooltips: {
-      mode: 'interpolate',
-      intersect: false,
-    },
     hover: {
       intersect: false,
     },
     plugins: {
       ...otherPlugins,
+      tooltip: {
+        mode: 'interpolate',
+        intersect: false,
+      },
       crosshair: {
         line: {
           color: 'black', // crosshair line color
@@ -725,16 +725,15 @@ const makeLatencyLineChartOptions = (minDataPoint, maxDataPoint, otherPlugins, e
       },
     },
     scales: {
-      xAxes: [
-        {
-          scaleLabel: {
+      x: {
+          title: {
             display: true,
-            labelString: 'Latency Percentile',
+            text: 'Latency Percentile',
           },
-          gridLines: {
+          grid: {
+            color: (ctx) => (ctx.index === 0 ? 'black' : 'rgba(0, 0, 0, 0.1)'),
             display: true,
-            zeroLineColor: 'black',
-            tickMarkLength: 3,
+            tickLength: 3,
           },
           ticks: {
             padding: 5,
@@ -742,23 +741,24 @@ const makeLatencyLineChartOptions = (minDataPoint, maxDataPoint, otherPlugins, e
             fontStyle: 'bold',
           },
         },
-      ],
-      yAxes: [
-        {
+      y: {
           type: 'logarithmic',
+          // This is to work around a new v3 bug: https://github.com/chartjs/Chart.js/issues/10644
+          // It sometimes doesn't work, and sometimes looks like shit:
+          afterBuildTicks: axis => axis.ticks.push({"value": maxDataPoint}),
           position: 'left',
-          gridLines: {
+          grid: {
             display: true,
             lineWidth: 1,
-            tickMarkLength: 1,
+            tickLength: 1,
           },
-          scaleLabel: {
+          title: {
             display: true,
-            labelString: 'Response Time (ms)',
+            text: 'Response Time (ms)',
           },
+          min: minDataPoint,
+          max: maxDataPoint,
           ticks: {
-            min: minDataPoint,
-            max: maxDataPoint,
             maxTicksLimit: 10,
             padding: 5,
             fontSize: 12,
@@ -768,7 +768,6 @@ const makeLatencyLineChartOptions = (minDataPoint, maxDataPoint, otherPlugins, e
             },
           },
         },
-      ],
     },
   }
 }
@@ -803,6 +802,7 @@ app.component('LatencyLineChart', {
       maxDataPoint = Math.max(maxDataPoint, benchDataEntry.histogram.json['max'])
       const label = benchDataEntry.name
       const data = hist_points.map((p) => benchDataEntry.histogram.json[p] || null)  // null, for spanGaps
+      const color = getColor()
       return {
         label,
         data,
@@ -810,7 +810,8 @@ app.component('LatencyLineChart', {
         borderWidth: 1,
         pointRadius: 2.5,
         pointBackgroundColor: 'white',
-        borderColor: getColor(),
+        borderColor:     color,
+        backgroundColor: color,
         // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
         cubicInterpolationMode: 'monotone',
         // tension: 0.4, //... I'm not convinced this actually does anything...
@@ -874,6 +875,7 @@ app.component('MultiLatencyLineChart', {
         maxDataPoint = Math.max(maxDataPoint, benchDataEntry['max'])
         const label = benchDataEntry.name
         const data = hist_points.map((p) => benchDataEntry[p] || null) // null, for spanGaps
+        const color = redToBlue(ix, props.benchData.length)
         return {
           label,
           data,
@@ -882,7 +884,8 @@ app.component('MultiLatencyLineChart', {
           pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
-          borderColor: redToBlue(ix, props.benchData.length),
+          borderColor:     color,
+          backgroundColor: color,
           // pointBackgroundColor: 'white',
           // Smooth lines, but monotone (no misleading up/down "swooping" to fit data points)
           cubicInterpolationMode: 'monotone',
@@ -896,7 +899,12 @@ app.component('MultiLatencyLineChart', {
             enabled: true,
           },
           zoom: {
-            enabled: true,
+            pinch: {
+              enabled: true,
+            },
+            wheel: {
+              enabled: true,
+            },
             mode: 'y',
           }
         }
@@ -914,7 +922,6 @@ app.component('MultiLatencyLineChart', {
         },
         // NOTE: this isn't really compatible with crosshair.zoom, so we disable that here:
         options: makeLatencyLineChartOptions(minDataPoint, maxDataPoint, zoomOptions, false),
-        // options: makeLatencyLineChartOptions({colorschemes: { scheme: "brewer.RdYlBu11" }}),
       })
     })
 
@@ -1013,7 +1020,7 @@ app.component('MemoryMultiBarChart', {
           datasets: [{
             label: props.title,
             data,
-            borderColor: [],
+            // borderColor: [],
             borderWidth: 2,
             backgroundColor: redToBlueArray(data.length),
           }],
@@ -1022,20 +1029,19 @@ app.component('MemoryMultiBarChart', {
           maintainAspectRatio: false,
           responsive: true,
           scales: {
-            yAxes: [
-              {
+            y: {
                 position: 'left',
-                gridLines: {
+                beginAtZero: true,
+                grid: {
                   display: true,
                   lineWidth: 1,
-                  tickMarkLength: 1,
+                  tickLength: 1,
                 },
-                scaleLabel: {
+                title: {
                   display: true,
-                  labelString: 'Memory/Allocation',
+                  text: 'Memory/Allocation',
                 },
                 ticks: {
-                  beginAtZero: true,
                   maxTicksLimit: 10,
                   padding: 5,
                   fontSize: 12,
@@ -1046,7 +1052,6 @@ app.component('MemoryMultiBarChart', {
                   },
                 },
               },
-            ],
           },
         },
       })
