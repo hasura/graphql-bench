@@ -133,8 +133,10 @@ export interface HDRHistogramParsedStats {
   ofOnePercentile: string
 }
 
-export interface HistogramSummaryWithMeanMinAndStdDev extends HistogramSummary {
+// add some extra statistics:
+export interface HistogramSummaryWithEtc extends HistogramSummary {
   mean: number
+  geoMean?: number
   min: number
   stdDeviation: number
 }
@@ -154,9 +156,11 @@ export interface BenchmarkMetrics {
     bytesPerSecond: number
   }
   histogram: {
-    json: HistogramSummaryWithMeanMinAndStdDev
+    json: HistogramSummaryWithEtc
     parsedStats: HDRHistogramParsedStats[]
   }
+  // A basic histogram with equal size buckets (the hdr histogram above predates this):
+  basicHistogram?: HistBucket[]
   // These are available when 'extended_hasura_checks: true' in the config yaml:
   extended_hasura_checks?: {
     bytes_allocated_per_request: number
@@ -172,6 +176,7 @@ export interface BenchmarkMetrics {
 export interface BenchmarkMetricParams {
   name: string
   histogram: precise_hdr.PreciseHdrHistogram
+  basicHistogram?: HistBucket[]
   time: {
     start: Date | string
     end: Date | string
@@ -183,5 +188,15 @@ export interface BenchmarkMetricParams {
   response: {
     totalBytes: number
     bytesPerSecond: number
-  }
+  },
+  // geometric mean of service times
+  geoMean?: number
+}
+
+// See histogram()
+//
+// there are 'count' values in the bucket greater than 'gte'
+export interface HistBucket {
+    gte: number,
+    count: number
 }

@@ -12,6 +12,7 @@ import {
   MaxRequestsInDurationBenchmark,
   MultiStageBenchmark,
   RequestsPerSecondBenchmark,
+  HistBucket,
 } from '../base/types'
 
 import {
@@ -213,14 +214,20 @@ export class K6Executor extends BenchmarkExecutor {
       crlfDelay: Infinity,
     })
 
-    // Create a histogram, record each HTTP Request duration in it
-    const histogram = hdr.build()
+    // We'll build an hdr histogram of HTTP Request durations
+    const hdrHistogram = hdr.build()
+    // ...and record raw durations for processing:
+    var reqDurations: number[] = []
+
     for await (const line of rl) {
       const stat: K6Metric | K6Point = JSON.parse(line)
+      // filter for just service time of successful queries:
       if (stat.type != 'Point') continue
       if (stat.metric != 'http_req_duration') continue
       if (Number(stat.data.tags.status) < 200) continue
-      histogram.recordValue(stat.data.value)
+      hdrHistogram.recordValue(stat.data.value)
+
+      reqDurations.push(stat.data.value)
     }
 
     // Remove the temp config file with the K6 run parameters, and logging stats
@@ -231,7 +238,8 @@ export class K6Executor extends BenchmarkExecutor {
     const jsonStats: K6Summary = fs.readJSONSync(outPath)
     const metrics = makeBenchmarkMetrics({
       name: metadata.queryName,
-      histogram,
+      histogram: hdrHistogram,
+      basicHistogram: histogram(200, reqDurations),
       time: {
         start: benchmarkStart.toISOString(),
         end: benchmarkEnd.toISOString(),
@@ -244,8 +252,68 @@ export class K6Executor extends BenchmarkExecutor {
         totalBytes: jsonStats.metrics.data_received.count,
         bytesPerSecond: jsonStats.metrics.data_received.rate,
       },
+      geoMean: geoMean(reqDurations)
     })
 
     return metrics
   }
+}
+
+// geometric mean, with exponent distributed over product so we don't overflow 
+function geoMean(xs: number[]): number {
+    return xs.map(x => Math.pow(x, 1/xs.length)).reduce((acc, x) => acc * x)
+}
+
+// NOTE: To save space and aid readability we’ll filter out any buckets with a
+// count of 0 that follow a bucket with a count of 0. This can still be graphed
+// fine without extra accommodations using a stepped line plot, as we plan
+function histogram(numBuckets: number, xs: number[]): HistBucket[] {
+    if (numBuckets < 1 || xs.length < 2) { throw "We need at least one bucket and xs.length > 1" }
+    
+    var xsSorted = new Float64Array(xs) // so sort works properly
+    xsSorted.sort()
+    
+    const bucketWidth = (xsSorted[xsSorted.length - 1] - xsSorted[0]) / numBuckets
+     
+    var buckets = []
+    for (let gte = xsSorted[0] ; true ; gte+=bucketWidth) {
+        // Last bucket; add remaining and stop
+        if (buckets.length === (numBuckets-1)) {
+            buckets.push({gte, count: xsSorted.length})
+            break
+        }
+        var count = 0
+        var ixNext
+        // this should always consume as least one value:
+        xsSorted.some((x, ix) => {
+            if (x < (gte+bucketWidth)) {
+                 count++
+                 return false // i.e. keep looping
+            } else {
+                 ixNext = ix
+                 return true
+            }
+        })
+        if (ixNext === undefined) {throw "Bugs in histogram!"}
+        xsSorted = xsSorted.slice(ixNext)
+        buckets.push({gte, count})
+    }
+    // having at most one 0 bucket in a row, i.e. `{gte: n, count: 0}` means
+    // "This and all higher buckets are empty"
+    var bucketsSparse = []
+    var inAZeroSpan = false
+    buckets.forEach( b => {
+        if (inAZeroSpan && b.count === 0) {
+            // drop this bucket
+        } else if (!inAZeroSpan && b.count === 0) {
+            // include this zero buckets but not subsequent zero buckets
+            bucketsSparse.push(b)
+            inAZeroSpan = true
+        } else {
+            inAZeroSpan = false
+            bucketsSparse.push(b)
+        }
+    })
+
+    return bucketsSparse
 }
