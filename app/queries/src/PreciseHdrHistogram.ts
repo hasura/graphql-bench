@@ -5,14 +5,14 @@ import { HDRHistogramParsedStats } from './executors/base/types'
 /* A wrapper for Histogram that gets us more precision. See
  * https://github.com/HdrHistogram/HdrHistogramJS/issues/35
  *
- * Values inserted will be truncated to `logBase 10 scalingFactor` (i.e. 3)
+ * Values inserted will be truncated to `logBase 10 scalingFactor` (i.e. 4)
  * decimal places.
  */
 export class PreciseHdrHistogram {
   // We'll need to multiply by scalingFactor anything we insert, and divide by scalingFactor
   // anything we output from here:
   private _histogramDirty: hdr.Histogram
-  static scalingFactor: number = 1000
+  static scalingFactor: number = 10000
 
   constructor(
     request: hdr.BuildRequest
@@ -76,7 +76,8 @@ export const defaultRequest: hdr.BuildRequest = {
   autoResize: true,
   lowestDiscernibleValue: 1,
   highestTrackableValue: 2,
-  numberOfSignificantValueDigits: 3,
+  // NOTE: the default 'hdr-histogram-js' is 3, but we'll set it to the max of 5 here:
+  numberOfSignificantValueDigits: 5,
   useWebAssembly: false,
 }
 
