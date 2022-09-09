@@ -7,7 +7,7 @@ window.onhashchange = locationHashChanged;
 // @ts-nocheck
 const { ref, reactive, computed, watch, watchEffect, onMounted } = Vue
 
-let num = -1
+var num = -1
 const colorList = [
   '#F44336',
   '#673AB7',
@@ -26,10 +26,12 @@ const colorList = [
   '#009688',
 ]
 
+// This is lame, but chart.js doesn't automatically color
 const getColor = () => {
   num = (num + 1) % colorList.length
   return colorList[num]
 }
+const resetColors = () => { num = -1 }
 
 // For the Latency Percentiles Graph:
 const hist_points = ['min', 'p50', 'p75', 'p90', 'p99', 'p99_9', 'max']
@@ -123,6 +125,32 @@ const Main = {
           Latency
         </h1>
         <LatencyLineChart :bench-data="benchData" />
+
+        <h2 class="py-4 mb-10 text-3xl border-b">
+          Histograms with medians
+        </h2>
+        <div>
+        Below we have a separate histogram thought for each of the queries seen
+        above. We also overlay some other useful information:
+        <ul>
+        <li>
+        Markers for median and geometric mean; these can be toggle back and forth by clicking on the graph. 
+        </li>
+        <li>
+        Rather than just including the median for the entire data set, we also show medians for the first half quarter and eighth; this can allow you to see e.g. whether performance skewed over time
+        </li>
+        <li>
+        Finally, the dashed stepped line Is a histogram of just the first half of the samples, scaled up 2x;  This is helpful for detecting skew, and validating the distribution
+        </li>
+        </ul>
+        </div>
+
+        <section >
+            <div v-for="benchDataEntry in benchData" style="padding: 10px">
+              <LatencyBasicHistogram v-if="'basicHistogram' in benchDataEntry" :bench-data-entry="benchDataEntry" />
+            </div>
+        </section>
+
         <h1 class="py-4 mb-10 text-3xl border-b">
           Other Metrics
         </h1>
@@ -821,6 +849,7 @@ app.component('LatencyLineChart', {
 
     const chartElem = ref(null)
     onMounted(() => {
+      resetColors()
       const ctx = chartElem.value.getContext('2d')
       const datasets = props.benchData.map(makeDataset)
       const myChart = new Chart(ctx, {
@@ -832,6 +861,214 @@ app.component('LatencyLineChart', {
           datasets,
         },
         options: makeLatencyLineChartOptions(minDataPoint, maxDataPoint, {}),
+      })
+      resetColors() // for LatencyBasicHistogram's
+    })
+
+    return { chartElem }
+  },
+})
+
+app.component('LatencyBasicHistogram', {
+  props: {
+    benchDataEntry: Object,
+  },
+  template: /* html */ `
+      <div
+      class="bg-gray-200 rounded-lg shadow-xl"
+      style="
+        position: relative;
+        width: 800px;
+        height: 700px;
+        padding: 50px 20px;
+        margin: auto;
+      "
+    >
+      <h1>Latency Histogram: {{benchDataEntry.name}}</h1>
+      <hr />
+      <canvas height="500px" ref="chartElem"></canvas>
+    </div>
+  `,
+  setup(props) {
+    // const makeDataset = (benchDataEntry) => {
+    //   const label = benchDataEntry.name
+    //   // if (! ('basicHistogram' in benchDataEntry)) return []  // skip if missing // XXXXXXXXXXXXX
+
+    //   const data = benchDataEntry.basicHistogram.map(b => {return {x: b.gte, y: b.count}})
+    //   const color = getColor()
+    //   return [{
+    //     label,
+    //     data,
+    //     fill: true,
+    //     stepped: true,
+    //     borderWidth: 1,
+    //     pointRadius: 0,
+    //     borderColor:     color,
+    //     backgroundColor: color+'40',
+    //   }]
+    // }
+
+    const chartElem = ref(null)
+    onMounted(() => {
+      const ctx = chartElem.value.getContext('2d')
+      const color = getColor()
+      // Keep track of max Y to draw our median lines:
+      var maxCount = 0
+      const hist = props.benchDataEntry.basicHistogram
+      const datasets =  [
+          {
+            label: "All samples",
+            order: 3,
+            data: hist.buckets.map(b => {
+                maxCount = Math.max(b.count, maxCount)
+                return {x: b.gte, y: b.count}
+            }),
+            fill: true,
+            stepped: true,
+            borderWidth: 1,
+            pointRadius: 0,
+            borderColor:     color,
+            backgroundColor: color,
+          },
+          {
+            label: "First half of samples (w/ counts scaled 2x)",
+            order: 2,
+            data: hist.buckets.map(b => {
+                maxCount = Math.max(b.count1stHalf*2, maxCount)
+                return {x: b.gte, y: b.count1stHalf*2}
+            }),
+            stepped: true,
+            borderWidth: 1,
+            pointRadius: 0,
+            borderColor:     'black',
+            borderDash: [5,2],
+          },
+          // Median markers:
+          {
+            label: "Median (all samples)",
+            order: 1,
+            data: [{x: props.benchDataEntry.histogram.json.p50, y: 0},
+                   {x: props.benchDataEntry.histogram.json.p50, y: maxCount*1.20}],
+            borderWidth: 1,
+            pointRadius: 4,
+            borderColor:     'green',
+            // borderDash: [5,2],
+          },
+          {
+            label: "Median (first 1/2 of samples)",
+            order: 1,
+            data: [{x: props.benchDataEntry.histogram.json.p501stHalf, y: 0},
+                   {x: props.benchDataEntry.histogram.json.p501stHalf, y: maxCount*1.17}],
+            borderWidth: 1,
+            pointRadius: 3.5,
+            borderColor:     'green',
+            borderDash: [5,2],
+          },
+          {
+            label: "Median (first 1/4 of samples)",
+            order: 1,
+            data: [{x: props.benchDataEntry.histogram.json.p501stQuarter, y: 0},
+                   {x: props.benchDataEntry.histogram.json.p501stQuarter, y: maxCount*1.14}],
+            borderWidth: 1,
+            pointRadius: 3,
+            borderColor:     'green',
+            borderDash: [5,5],
+          },
+          {
+            label: "Median (first 1/8 of samples)",
+            order: 1,
+            data: [{x: props.benchDataEntry.histogram.json.p501stEighth, y: 0},
+                   {x: props.benchDataEntry.histogram.json.p501stEighth, y: maxCount*1.11}],
+            borderWidth: 1,
+            pointRadius: 2.5,
+            borderColor:     'green',
+            borderDash: [5,10],
+          },
+          // geometric mean markers:
+          {
+            label: "Geometric mean (all samples)",
+            order: 1,
+            hidden: true, // unhide with click
+            data: [{x: props.benchDataEntry.histogram.json.geoMean, y: 0},
+                   {x: props.benchDataEntry.histogram.json.geoMean, y: maxCount*1.20}],
+            borderWidth: 1,
+            pointRadius: 4,
+            borderColor:     'red',
+            // borderDash: [5,2],
+          },
+          {
+            label: "Geometric mean (first 1/2 of samples)",
+            order: 1,
+            hidden: true, // unhide with click
+            data: [{x: props.benchDataEntry.histogram.json.geoMean1stHalf, y: 0},
+                   {x: props.benchDataEntry.histogram.json.geoMean1stHalf, y: maxCount*1.17}],
+            borderWidth: 1,
+            pointRadius: 3.5,
+            borderColor:     'red',
+            borderDash: [5,2],
+          },
+          {
+            label: "Geometric mean (first 1/4 of samples)",
+            order: 1,
+            hidden: true, // unhide with click
+            data: [{x: props.benchDataEntry.histogram.json.geoMean1stQuarter, y: 0},
+                   {x: props.benchDataEntry.histogram.json.geoMean1stQuarter, y: maxCount*1.14}],
+            borderWidth: 1,
+            pointRadius: 3,
+            borderColor:     'red',
+            borderDash: [5,5],
+          },
+          {
+            label: "Geometric mean (first 1/8 of samples)",
+            order: 1,
+            hidden: true, // unhide with click
+            data: [{x: props.benchDataEntry.histogram.json.geoMean1stEighth, y: 0},
+                   {x: props.benchDataEntry.histogram.json.geoMean1stEighth, y: maxCount*1.11}],
+            borderWidth: 1,
+            pointRadius: 2.5,
+            borderColor:     'red',
+            borderDash: [5,10],
+          },
+      ]
+      const myChart = new Chart(ctx, {
+        responsive: true,
+        maintainAspectRatio: false,
+        type: 'line',
+        data: {
+          // labels: hist_labels,
+            // datasets: datasets.concat([{borderColor: 'red', data:[{x: 2, y: 0},{x: 2, y: 12000}]}]), // XXXXXXXXXXX
+          datasets,
+        },
+        options: {
+          onClick: (e, _,  chart) => {
+              // // toggle scale:
+              // const x = chart.options.scales.x
+              // if (x.type === 'logarithmic') { x.type = 'linear' } else { x.type = 'logarithmic' }
+              // chart.update()
+              chart.data.datasets.forEach( (obj) => {
+                if (obj.label.startsWith("Geometric mean") || obj.label.startsWith("Median")) {
+                  if (obj.hidden) { obj.hidden = false } else { obj.hidden = true }
+                }
+                chart.update()
+              })
+          },
+          scales: {
+            y: {
+              title: {
+                text: 'Count',
+                display: true,
+              },
+            },
+            x: {
+              title: {
+                text: `Latency bucket (ms)...   (NOTE: ${hist.outliersRemoved} largest samples omitted)`,
+                display: true,
+              },
+              type: 'linear',
+              position: 'bottom'
+            }
+          }
+        }
       })
     })
 
