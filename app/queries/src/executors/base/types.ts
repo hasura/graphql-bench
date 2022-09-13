@@ -133,8 +133,18 @@ export interface HDRHistogramParsedStats {
   ofOnePercentile: string
 }
 
-export interface HistogramSummaryWithMeanMinAndStdDev extends HistogramSummary {
+// add some extra statistics:
+export interface HistogramSummaryWithEtc extends HistogramSummary {
   mean: number
+  geoMean?: number
+  // The medians/geomeans for different sized prefixes of the samples, letting
+  // us validate the results / get a sense if performance skewed over time
+  p501stHalf?: number
+  p501stQuarter?: number
+  p501stEighth?: number
+  geoMean1stHalf?: number
+  geoMean1stQuarter?: number
+  geoMean1stEighth?: number
   min: number
   stdDeviation: number
 }
@@ -154,9 +164,13 @@ export interface BenchmarkMetrics {
     bytesPerSecond: number
   }
   histogram: {
-    json: HistogramSummaryWithMeanMinAndStdDev
+    json: HistogramSummaryWithEtc
     parsedStats: HDRHistogramParsedStats[]
   }
+  // A basic histogram with equal size buckets (the hdr histogram above predates this).
+  // (In fact this is 2 histograms: one for the entire set of data, and another
+  // count for just the first half of the data)
+  basicHistogram?: BasicHistogram
   // These are available when 'extended_hasura_checks: true' in the config yaml:
   extended_hasura_checks?: {
     bytes_allocated_per_request: number
@@ -172,6 +186,7 @@ export interface BenchmarkMetrics {
 export interface BenchmarkMetricParams {
   name: string
   histogram: precise_hdr.PreciseHdrHistogram
+  basicHistogram?: BasicHistogram
   time: {
     start: Date | string
     end: Date | string
@@ -183,5 +198,31 @@ export interface BenchmarkMetricParams {
   response: {
     totalBytes: number
     bytesPerSecond: number
-  }
+  },
+  // geometric mean of service times
+  geoMean?: number
+  // The medians/geomeans for different sized prefixes of the samples, letting
+  // us validate the results / get a sense if performance skewed over time
+  p501stHalf?: number
+  p501stQuarter?: number
+  p501stEighth?: number
+  geoMean1stHalf?: number
+  geoMean1stQuarter?: number
+  geoMean1stEighth?: number
+}
+
+// See histogram()
+//
+// There are 'count' values in the bucket greater than 'gte'. 'count1stHalf'
+// is the bucket count just looking at the first half of the data (this might
+// help us determine whether the results skew over the course of the benchmark
+// run)
+export interface HistBucket {
+    gte: number
+    count: number
+    count1stHalf: number
+}
+export interface BasicHistogram {
+    buckets: HistBucket[]
+    outliersRemoved: number
 }

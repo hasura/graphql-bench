@@ -33,7 +33,7 @@ export function parseHdrHistogramText(text: string): HDRHistogramParsedStats[] {
 export function makeBenchmarkMetrics(
   params: BenchmarkMetricParams
 ): BenchmarkMetrics {
-  const { name, histogram, time, requests, response } = params
+  const { name, histogram, basicHistogram, time, requests, response, geoMean, p501stHalf, p501stQuarter, p501stEighth, geoMean1stHalf, geoMean1stQuarter, geoMean1stEighth } = params
   return {
     name,
     time,
@@ -43,11 +43,19 @@ export function makeBenchmarkMetrics(
       json: {
         ...histogram.toJSON(),
         mean: histogram.mean,
+        geoMean,
+        p501stHalf,
+        p501stQuarter,
+        p501stEighth,
+        geoMean1stHalf,
+        geoMean1stQuarter,
+        geoMean1stEighth,
         min: histogram.min,
         stdDeviation: histogram.stdDeviation,
       },
       parsedStats: histogram.parsedStats,
     },
+    basicHistogram,
   }
 }
 

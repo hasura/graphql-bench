@@ -12,6 +12,8 @@ import {
   MaxRequestsInDurationBenchmark,
   MultiStageBenchmark,
   RequestsPerSecondBenchmark,
+  HistBucket,
+  BasicHistogram,
 } from '../base/types'
 
 import {
@@ -213,14 +215,20 @@ export class K6Executor extends BenchmarkExecutor {
       crlfDelay: Infinity,
     })
 
-    // Create a histogram, record each HTTP Request duration in it
-    const histogram = hdr.build()
+    // We'll build an hdr histogram of HTTP Request durations
+    const hdrHistogram = hdr.build()
+    // ...and record raw durations for processing:
+    var reqDurations: number[] = []
+
     for await (const line of rl) {
       const stat: K6Metric | K6Point = JSON.parse(line)
+      // filter for just service time of successful queries:
       if (stat.type != 'Point') continue
       if (stat.metric != 'http_req_duration') continue
       if (Number(stat.data.tags.status) < 200) continue
-      histogram.recordValue(stat.data.value)
+      hdrHistogram.recordValue(stat.data.value)
+
+      reqDurations.push(stat.data.value)
     }
 
     // Remove the temp config file with the K6 run parameters, and logging stats
@@ -231,7 +239,9 @@ export class K6Executor extends BenchmarkExecutor {
     const jsonStats: K6Summary = fs.readJSONSync(outPath)
     const metrics = makeBenchmarkMetrics({
       name: metadata.queryName,
-      histogram,
+      histogram: hdrHistogram,
+      // filter some outliers to get better granularity for bulk of samples:
+      basicHistogram: histogram(100, reqDurations, hdrHistogram.toJSON().p99),
       time: {
         start: benchmarkStart.toISOString(),
         end: benchmarkEnd.toISOString(),
@@ -244,8 +254,106 @@ export class K6Executor extends BenchmarkExecutor {
         totalBytes: jsonStats.metrics.data_received.count,
         bytesPerSecond: jsonStats.metrics.data_received.rate,
       },
+      geoMean: geoMean(reqDurations),
+      p501stHalf:    median(reqDurations.slice(0,reqDurations.length/2)),
+      p501stQuarter: median(reqDurations.slice(0,reqDurations.length/4)),
+      p501stEighth:  median(reqDurations.slice(0,reqDurations.length/8)),
+      geoMean1stHalf:    geoMean(reqDurations.slice(0,reqDurations.length/2)),
+      geoMean1stQuarter: geoMean(reqDurations.slice(0,reqDurations.length/4)),
+      geoMean1stEighth:  geoMean(reqDurations.slice(0,reqDurations.length/8)),
     })
 
     return metrics
   }
+}
+
+// geometric mean, with exponent distributed over product so we don't overflow 
+function geoMean(xs: number[]): number {
+    return xs.map(x => Math.pow(x, 1/xs.length)).reduce((acc, x) => acc * x)
+}
+
+// Generate a double histogram of the input numbers: one containing all the
+// data, and the other just the first half of the data. Optionally filtering
+// out outliers >= maxValue
+//
+// NOTE: To save space and aid readability we’ll filter out any buckets with a
+// count of 0 that follow a bucket with a count of 0. This can still be graphed
+// fine without extra accommodations using a stepped line plot, as we plan
+function histogram(numBuckets: number, xs: number[], maxValue: number = Number.MAX_SAFE_INTEGER): BasicHistogram {
+    if (numBuckets < 1 || xs.length < 2) { throw "We need at least one bucket and xs.length > 1" }
+    
+    // sort list, keeping track of original index so we can determine which
+    // part of the data we're looking at
+    var outliersRemoved = 0
+    var xsSorted = xs.map((x, ix) => [x,ix])
+                     .filter(([x,_]) => { 
+                         let ok = x < maxValue
+                         if (!ok) outliersRemoved++
+                         return ok
+                     })
+    xsSorted.sort((a,b) => a[0] - b[0])
+    // index of last element in the first half of data:
+    const ix1stHalfLast = xs.length/2 - 1
+    
+    const bucketWidth = (xsSorted[xsSorted.length - 1][0] - xsSorted[0][0]) / numBuckets
+     
+    var buckets: HistBucket[] = []
+    for (let gte = xsSorted[0][0] ; true ; gte+=bucketWidth) {
+        // Last bucket; add remaining and stop
+        if (buckets.length === (numBuckets-1)) {
+            var count1stHalf = 0
+            xsSorted.map( ([_,ixOrig]) => { if (ixOrig <= ix1stHalfLast) count1stHalf++ })
+            buckets.push({gte, count: xsSorted.length, count1stHalf})
+            break
+        }
+        var count = 0
+        var count1stHalf = 0
+        var ixNext
+        // this should always consume as least one value:
+        xsSorted.some(([x, ixOrig], ix) => {
+            if (x < (gte+bucketWidth)) {
+                count++
+                if (ixOrig <= ix1stHalfLast) count1stHalf++
+                return false // i.e. keep looping
+            } else {
+                ixNext = ix
+                return true
+            }
+        })
+        if (ixNext === undefined) {throw "Bugs in histogram!"}
+        xsSorted = xsSorted.slice(ixNext)
+        buckets.push({gte, count, count1stHalf})
+    }
+    // having at most one 0 bucket in a row, i.e. `{gte: n, count: 0}` means
+    // "This and all higher buckets are empty"
+    var bucketsSparse = []
+    var inAZeroSpan = false
+    buckets.forEach( b => {
+        if (inAZeroSpan && b.count === 0) {
+            // drop this bucket
+        } else if (!inAZeroSpan && b.count === 0) {
+            // include this zero buckets but not subsequent zero buckets
+            bucketsSparse.push(b)
+            inAZeroSpan = true
+        } else {
+            inAZeroSpan = false
+            bucketsSparse.push(b)
+        }
+    })
+
+    return {buckets: bucketsSparse, outliersRemoved}
+}
+
+// Copy paste: https://stackoverflow.com/a/53660837/176841
+function median(numbers) {
+    if (numbers.length === 0) return 0 // I guess
+
+    const sorted = Float64Array.from(numbers).sort();
+    const middle = Math.floor(sorted.length / 2);
+
+    if (sorted.length % 2 === 0) {
+        return (sorted[middle - 1] + sorted[middle]) / 2;
+    }
+
+    return sorted[middle];
 }
