@@ -1118,7 +1118,6 @@ app.component('MultiLatencyLineChart', {
           data,
           fill: false,
           borderWidth: 1.5,
-          pointRadius: 0,  // disable points, which looks cluttered
           // This is a heatmap-style red to blue color scheme which lets us show
           // the results "fading back in time":
           borderColor:     color,
