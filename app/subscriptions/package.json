@@ -23,7 +23,7 @@
     "knex": "^0.21.1",
     "lodash": "^4.17.15",
     "log-update": "^4.0.0",
-    "objection": "^1.6.3",
+    "objection": "^2.2.16",
     "pg": "^8.2.1",
     "reattempt": "^0.1.1",
     "websocket-as-promised": "^1.0.1",
