@@ -20,7 +20,7 @@
     "@types/node": "^11.9.5",
     "dotenv": "^8.2.0",
     "js-yaml": "^3.13.1",
-    "knex": "^0.21.1",
+    "knex": "^2.4.0",
     "lodash": "^4.17.15",
     "log-update": "^4.0.0",
     "objection": "^1.6.3",
