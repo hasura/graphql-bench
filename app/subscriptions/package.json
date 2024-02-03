@@ -27,7 +27,7 @@
     "pg": "^8.2.1",
     "reattempt": "^0.1.1",
     "websocket-as-promised": "^1.0.1",
-    "ws": "^7.3.0"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "@types/graphql": "^14.0.0",
