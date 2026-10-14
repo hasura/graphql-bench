@@ -66,6 +66,8 @@ export class BenchmarkRunner {
           let allocated_bytes_after  = stats.allocated_bytes
           let live_bytes_after       = stats.gc.gcdetails_live_bytes
           let mem_in_use_bytes_after = stats.gc.gcdetails_mem_in_use_bytes
+          let max_live_bytes_after       = stats.max_live_bytes
+          let max_mem_in_use_bytes_after = stats.max_mem_in_use_bytes
 
           metrics.extended_hasura_checks = { 
             'bytes_allocated_per_request': 
@@ -74,6 +76,8 @@ export class BenchmarkRunner {
             live_bytes_after,
             mem_in_use_bytes_before,
             mem_in_use_bytes_after,
+            max_live_bytes_after,
+            max_mem_in_use_bytes_after,
           }
         }
 

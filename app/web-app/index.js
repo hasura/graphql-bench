@@ -74,6 +74,28 @@ const fetchAllJSON = (urlsIds) => {
   ))
 }
 
+// extended_hasura_checks which are high-water marks over the lifetime of the
+// server. Because of this we only care about the value from the last benchmark
+// in a report (which might be the only one where these were collected).
+// These are missing from older reports.
+// (NOTE: we also collect max_live_bytes_after but don't display it, since it's
+// only sampled at major GCs, so depends on GC timing)
+const peakMetrics = ['max_mem_in_use_bytes_after']
+
+// Return the peak stats from a report, e.g. {max_mem_in_use_bytes_after: 123},
+// taken from the last benchmark which has each one (possibly {}):
+const reportPeakStats = (report) => {
+  let peaks = {}
+  for (const b of report) {
+    for (const metric of peakMetrics) {
+      if (b.extended_hasura_checks && metric in b.extended_hasura_checks) {
+        peaks[metric] = b.extended_hasura_checks[metric]
+      }
+    }
+  }
+  return peaks
+}
+
 // twiddle and filter data, and combine multiple reports into a single multiBenchData:
 const prepareMultiBenchData = (jsons, names) => {
   const jsonsByName = jsons.map( (report, ix) => {
@@ -184,6 +206,15 @@ const Main = {
         <h1 class="py-4 mb-10 text-3xl border-b">
           Memory Usage and Allocation Metrics
         </h1>
+        <!-- Peak memory stats, once per report. Skip if no report has them -->
+        <div v-if="multiPeakData.some((it) => Object.keys(it).length > 1)" style="padding: 10px">
+          <h2 class="py-4 mb-10 text-2xl border-b">
+            Peak memory (over the whole run)
+          </h2>
+          <div class="flex">
+            <MemoryMultiBarChart :bench-data="multiPeakData" :title="'peak \\'mem_in_use\\''" :metric="'max_mem_in_use_bytes_after'" />
+          </div>
+        </div>
         <div v-for="(benchData, benchName) in multiBenchData" style="padding: 10px">
           <h2 class="py-4 mb-10 text-2xl border-b">
             {{benchName.replace('-k6-custom','')}}
@@ -209,6 +240,9 @@ const Main = {
     // Data aggregated from two or more JSON reports, which we'll present as a
     // regression report
     let multiBenchData = ref({})
+    // Peak memory stats from each report in multiBenchData mode, like:
+    //   [{name: 'report1', max_mem_in_use_bytes_after: 123}, ...]
+    let multiPeakData = ref([])
     // NOTE: we only ever have EITHER `benchData` OR `multiBenchData` defined.
     //       Morally it's an enum/sum type.
 
@@ -228,6 +262,7 @@ const Main = {
           // We're generating a regression report from multiBenchData:
           } else {
             multiBenchData.value = prepareMultiBenchData(jsons, urlsIds)
+            multiPeakData.value = jsons.map((j, ix) => ({name: urlsIds[ix], ...reportPeakStats(j)}))
           }
         })
     } else {
@@ -242,6 +277,7 @@ const Main = {
         const filesText = await Promise.all(files.map((f) => f.text()))
         const filesJson = filesText.map(JSON.parse)
         multiBenchData.value = prepareMultiBenchData(filesJson, files.map((f) => f.name))
+        multiPeakData.value = filesJson.map((j, ix) => ({name: files[ix].name, ...reportPeakStats(j)}))
       // We're generating single run report:
       } else {
         const file = event.target.files[0]
@@ -250,7 +286,7 @@ const Main = {
       }
     }
 
-    return { benchData, handleFileUpload, multiBenchData }
+    return { benchData, handleFileUpload, multiBenchData, multiPeakData }
   },
 }
 
@@ -1242,7 +1278,8 @@ app.component('MemoryMultiBarChart', {
     var labels = []
     props.benchData.forEach((it) => {
       labels.push(it.name)
-      data.push(Number(it[props.metric].toFixed(2)))
+      // (metric may be missing from older reports; chart.js skips nulls)
+      data.push(props.metric in it ? Number(it[props.metric].toFixed(2)) : null)
     })
 
     const chartElem = ref(null)
@@ -1369,11 +1406,26 @@ app.component('MemoryStats', {
     width: Number,
   },
   setup(props) {
-    const aggregateData = props.benchData.flatMap((it) => {
-      let metrics = ['bytes_allocated_per_request', 'live_bytes_before', 'live_bytes_after', 'mem_in_use_bytes_before', 'mem_in_use_bytes_after']
-      return metrics.map((metric) => {
+    // Groups of bars (one per benchmark), in display order, with short labels:
+    const metrics = [
+      ['bytes_allocated_per_request', 'alloc per req'],
+      ['live_bytes_before',           'live before'],
+      ['live_bytes_after',            'live after'],
+      ['mem_in_use_bytes_before',     'in use before'],
+      ['mem_in_use_bytes_after',      'in use after'],
+      ['max_mem_in_use_bytes_after',  'PEAK in use'],
+    ]
+    const peaks = reportPeakStats(props.benchData)
+    // (NOTE: the order here determines the order of the groups)
+    const aggregateData = metrics.flatMap(([metric, label]) => {
+      // Peak stats are for the whole run, so get just a single bar:
+      if (peakMetrics.includes(metric)) {
+        if (!(metric in peaks)) return []
+        return [{ metric: label, name: 'peak (whole run)', value: Number(peaks[metric].toFixed(2)) }]
+      }
+      return props.benchData.map((it) => {
         return {
-          metric: metric.replaceAll("bytes_","").replaceAll("_", " "),
+          metric: label,
           name: it.name,
           value: Number(it.extended_hasura_checks[metric].toFixed(2)),
         }
@@ -1401,6 +1453,9 @@ app.component('MemoryStats', {
     <component is="style">
       .h-128 {
         height: 32rem;
+      }
+      #memory-stats .mg-barplot-group-label {
+        font-size: 0.75rem;
       }
     </component>
     <div 

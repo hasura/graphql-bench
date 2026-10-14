@@ -180,6 +180,10 @@ export interface BenchmarkMetrics {
     live_bytes_after: number
     mem_in_use_bytes_before: number
     mem_in_use_bytes_after: number
+    // high-water marks over the lifetime of the process, collected after the
+    // benchmark runs:
+    max_live_bytes_after: number
+    max_mem_in_use_bytes_after: number
   }
 }
 
